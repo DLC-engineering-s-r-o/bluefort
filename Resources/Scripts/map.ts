@@ -32,8 +32,6 @@ const mapOptions = {
     zoomControl: false,
 }
 
-
-
 const loader = new Loader({
     apiKey: "AIzaSyD3Vb9QGa1aKgT_jOOZPax3tx58Z9IqLH8",
     version: "weekly",
