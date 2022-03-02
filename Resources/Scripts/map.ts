@@ -2,7 +2,7 @@
 
 import { references } from "./map/references";
 
-import { Cluster, DefaultRenderer, GridAlgorithm, MarkerClusterer } from "@googlemaps/markerclusterer";
+import {GridAlgorithm, MarkerClusterer } from "@googlemaps/markerclusterer";
 import { Loader } from "@googlemaps/js-api-loader";
 
 let map: google.maps.Map;
