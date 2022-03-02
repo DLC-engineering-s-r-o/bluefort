@@ -27,14 +27,14 @@ export function initAnim() {
       let card = aboutCards[i] as HTMLElement
       let cardText = cardsText[i] as HTMLSpanElement
       let step = 1
-      let interval = animLength / 20
+      let interval = animLength / 12
 
       if (i == 1) {
         step = 100
-        interval = animLength / 10
+        interval = animLength / 11
       }
 
-      else if (i == 2) interval = animLength / 3
+      else if (i == 2) interval = animLength / 4
 
       if (scrollPos >= card.offsetTop + window.innerHeight / 3) {
         card.classList.add("card--visible")
