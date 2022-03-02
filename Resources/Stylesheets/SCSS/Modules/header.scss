@@ -3,8 +3,27 @@
 .header {
   --anim-length: 0.7s;
   --anim-delay: calc(var(--anim-length) / 2);
+  position: relative;
   height: 100vh;
   max-height: $height-4k;
+
+  &:after {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    display: block;
+    content: "";
+    width: 50%;
+    height: 100%;
+    background-image: image-set(
+      "../images/backgrounds/Group.png" 1x,
+      "../images/backgrounds/Group.png" 2x
+    );
+    background-repeat: no-repeat;
+    background-position: right;
+    animation: showRight 1s linear forwards;
+  }
+
   &__container {
     --container-max-width: #{$width-desktop-m};
     --col-count: 2;
@@ -108,34 +127,46 @@
   }
 
   &__bg {
-    --bg-min-height: 0;
-    width: 100%;
-    min-height: var(--bg-min-height);
-    background-image: image-set(
-      "../images/backgrounds/header-bg_480.png" 1x,
-      "../images/backgrounds/header-bg_960.png" 2x
-    );
-    background-repeat: no-repeat;
-    background-position: right bottom;
+    // --bg-min-height: 0;
+    // width: 100%;
+    // min-height: var(--bg-min-height);
+    // background-image: image-set(
+    //   "../images/backgrounds/header-bg_480.png" 1x,
+    //   "../images/backgrounds/header-bg_960.png" 2x
+    // );
+    // background-repeat: no-repeat;
+    // background-position: right bottom;
+    // opacity: 0;
+    // animation: showImage 1s linear forwards;
+    // transform: scale(0.9, 0.9);
+    // z-index: 1;
+    // background-size: contain;
+
+    // @include res-min-tablet {
+    //   background-image: image-set(
+    //     "../images/backgrounds/header-bg_960.png" 1x,
+    //     "../images/backgrounds/header-bg_1920.png" 1x
+    //   );
+    // }
+
+    // @include res-max-mobile-l {
+    //   --bg-min-height: 55vh;
+    //   position: absolute;
+    //   bottom: 0;
+    //   left: 0;
+    // }
+  }
+}
+
+@keyframes showRight {
+  from {
     opacity: 0;
-    animation: showImage 1s linear forwards;
-    transform: scale(0.9, 0.9);
-    z-index: 1;
-    background-size: contain;
+    transform: translate(4rem, 0);
+  }
 
-    @include res-min-tablet {
-      background-image: image-set(
-        "../images/backgrounds/header-bg_960.png" 1x,
-        "../images/backgrounds/header-bg_1920.png" 1x
-      );
-    }
-
-    @include res-max-mobile-l {
-      --bg-min-height: 55vh;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
+  to {
+    opacity: 1;
+    transform: translate(0);
   }
 }
 
