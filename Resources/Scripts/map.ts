@@ -6419,7 +6419,7 @@ export function initMap() {
 
             marker.addListener('click', () => {
                 infoWindow.setContent(
-                    `<div class='map__pop-up'><strong>${position.name}</strong><br><span>${new Date(position.date).toLocaleDateString("cs-CZ")}</span><p>${position.desc}</p><b>${position.price} Kč</b></div>`,
+                    `<div class='map__pop-up'><strong>${position.name}</strong><br><span>${position.year}</span><p>${position.desc}</p><b>IČ: ${position.vat}</b></div>`,
                 )
                 infoWindow.open(map, marker)
             })
