@@ -13,15 +13,20 @@
     right: -2px;
     display: block;
     content: "";
-    width: 50%;
+    width: 51%;
     height: 100%;
     background-image: image-set(
-      "../images/backgrounds/Group.png" 1x,
-      "../images/backgrounds/Group.png" 2x
+      "../images/backgrounds/header_bg.png" 1x,
+      "../images/backgrounds/header_bg.png" 2x
+    );
+    background-image: image-set(
+      "../images/backgrounds/header_bg.webp" 1x,
+      "../images/backgrounds/header_bg.webp" 2x
     );
     background-repeat: no-repeat;
     background-position: right;
-    animation: showRight 1s linear forwards;
+    //animation: showRight 1s linear forwards;
+    background-size: cover;
   }
 
   &__container {
