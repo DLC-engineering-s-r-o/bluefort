@@ -1,28 +1,3368 @@
-/// <reference path="../../node_modules/@types/googlemaps/index.d.ts" />
+/******/ (() => { // webpackBootstrap
+/******/ 	var __webpack_modules__ = ({
 
-import { references } from "./map/references";
+/***/ "./node_modules/@googlemaps/js-api-loader/dist/index.esm.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/@googlemaps/js-api-loader/dist/index.esm.js ***!
+  \******************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-import {GridAlgorithm, MarkerClusterer } from "@googlemaps/markerclusterer";
-import { Loader } from "@googlemaps/js-api-loader";
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "DEFAULT_ID": () => (/* binding */ DEFAULT_ID),
+/* harmony export */   "Loader": () => (/* binding */ Loader),
+/* harmony export */   "LoaderStatus": () => (/* binding */ LoaderStatus)
+/* harmony export */ });
+// do not edit .js files directly - edit src/index.jst
 
-let map: google.maps.Map;
-const middleOfCzechia = { lat: 49.74378, lng: 15.33865 };
 
-let defaultZoomLevel = 8
 
-function checkScreenResolution(){
-   
-    if (window.screen.width <= 768){ 
-        defaultZoomLevel = 7
-    } 
+var fastDeepEqual = function equal(a, b) {
+  if (a === b) return true;
 
-    if (window.screen.width <= 425){
-        defaultZoomLevel = 6
-    } 
+  if (a && b && typeof a == 'object' && typeof b == 'object') {
+    if (a.constructor !== b.constructor) return false;
+
+    var length, i, keys;
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length != b.length) return false;
+      for (i = length; i-- !== 0;)
+        if (!equal(a[i], b[i])) return false;
+      return true;
+    }
+
+
+
+    if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
+    if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
+    if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
+
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) return false;
+
+    for (i = length; i-- !== 0;)
+      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
+
+    for (i = length; i-- !== 0;) {
+      var key = keys[i];
+
+      if (!equal(a[key], b[key])) return false;
+    }
+
+    return true;
   }
 
-checkScreenResolution()
+  // true if both NaN, false otherwise
+  return a!==a && b!==b;
+};
 
+/**
+ * Copyright 2019 Google LLC. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at.
+ *
+ *      Http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const DEFAULT_ID = "__googleMapsScriptId";
+/**
+ * The status of the [[Loader]].
+ */
+var LoaderStatus;
+(function (LoaderStatus) {
+    LoaderStatus[LoaderStatus["INITIALIZED"] = 0] = "INITIALIZED";
+    LoaderStatus[LoaderStatus["LOADING"] = 1] = "LOADING";
+    LoaderStatus[LoaderStatus["SUCCESS"] = 2] = "SUCCESS";
+    LoaderStatus[LoaderStatus["FAILURE"] = 3] = "FAILURE";
+})(LoaderStatus || (LoaderStatus = {}));
+/**
+ * [[Loader]] makes it easier to add Google Maps JavaScript API to your application
+ * dynamically using
+ * [Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
+ * It works by dynamically creating and appending a script node to the the
+ * document head and wrapping the callback function so as to return a promise.
+ *
+ * ```
+ * const loader = new Loader({
+ *   apiKey: "",
+ *   version: "weekly",
+ *   libraries: ["places"]
+ * });
+ *
+ * loader.load().then((google) => {
+ *   const map = new google.maps.Map(...)
+ * })
+ * ```
+ */
+class Loader {
+    /**
+     * Creates an instance of Loader using [[LoaderOptions]]. No defaults are set
+     * using this library, instead the defaults are set by the Google Maps
+     * JavaScript API server.
+     *
+     * ```
+     * const loader = Loader({apiKey, version: 'weekly', libraries: ['places']});
+     * ```
+     */
+    constructor({ apiKey, channel, client, id = DEFAULT_ID, libraries = [], language, region, version, mapIds, nonce, retries = 3, url = "https://maps.googleapis.com/maps/api/js", }) {
+        this.CALLBACK = "__googleMapsCallback";
+        this.callbacks = [];
+        this.done = false;
+        this.loading = false;
+        this.errors = [];
+        this.version = version;
+        this.apiKey = apiKey;
+        this.channel = channel;
+        this.client = client;
+        this.id = id || DEFAULT_ID; // Do not allow empty string
+        this.libraries = libraries;
+        this.language = language;
+        this.region = region;
+        this.mapIds = mapIds;
+        this.nonce = nonce;
+        this.retries = retries;
+        this.url = url;
+        if (Loader.instance) {
+            if (!fastDeepEqual(this.options, Loader.instance.options)) {
+                throw new Error(`Loader must not be called again with different options. ${JSON.stringify(this.options)} !== ${JSON.stringify(Loader.instance.options)}`);
+            }
+            return Loader.instance;
+        }
+        Loader.instance = this;
+    }
+    get options() {
+        return {
+            version: this.version,
+            apiKey: this.apiKey,
+            channel: this.channel,
+            client: this.client,
+            id: this.id,
+            libraries: this.libraries,
+            language: this.language,
+            region: this.region,
+            mapIds: this.mapIds,
+            nonce: this.nonce,
+            url: this.url,
+        };
+    }
+    get status() {
+        if (this.errors.length) {
+            return LoaderStatus.FAILURE;
+        }
+        if (this.done) {
+            return LoaderStatus.SUCCESS;
+        }
+        if (this.loading) {
+            return LoaderStatus.LOADING;
+        }
+        return LoaderStatus.INITIALIZED;
+    }
+    get failed() {
+        return this.done && !this.loading && this.errors.length >= this.retries + 1;
+    }
+    /**
+     * CreateUrl returns the Google Maps JavaScript API script url given the [[LoaderOptions]].
+     *
+     * @ignore
+     */
+    createUrl() {
+        let url = this.url;
+        url += `?callback=${this.CALLBACK}`;
+        if (this.apiKey) {
+            url += `&key=${this.apiKey}`;
+        }
+        if (this.channel) {
+            url += `&channel=${this.channel}`;
+        }
+        if (this.client) {
+            url += `&client=${this.client}`;
+        }
+        if (this.libraries.length > 0) {
+            url += `&libraries=${this.libraries.join(",")}`;
+        }
+        if (this.language) {
+            url += `&language=${this.language}`;
+        }
+        if (this.region) {
+            url += `&region=${this.region}`;
+        }
+        if (this.version) {
+            url += `&v=${this.version}`;
+        }
+        if (this.mapIds) {
+            url += `&map_ids=${this.mapIds.join(",")}`;
+        }
+        return url;
+    }
+    deleteScript() {
+        const script = document.getElementById(this.id);
+        if (script) {
+            script.remove();
+        }
+    }
+    /**
+     * Load the Google Maps JavaScript API script and return a Promise.
+     */
+    load() {
+        return this.loadPromise();
+    }
+    /**
+     * Load the Google Maps JavaScript API script and return a Promise.
+     *
+     * @ignore
+     */
+    loadPromise() {
+        return new Promise((resolve, reject) => {
+            this.loadCallback((err) => {
+                if (!err) {
+                    resolve(window.google);
+                }
+                else {
+                    reject(err.error);
+                }
+            });
+        });
+    }
+    /**
+     * Load the Google Maps JavaScript API script with a callback.
+     */
+    loadCallback(fn) {
+        this.callbacks.push(fn);
+        this.execute();
+    }
+    /**
+     * Set the script on document.
+     */
+    setScript() {
+        if (document.getElementById(this.id)) {
+            // TODO wrap onerror callback for cases where the script was loaded elsewhere
+            this.callback();
+            return;
+        }
+        const url = this.createUrl();
+        const script = document.createElement("script");
+        script.id = this.id;
+        script.type = "text/javascript";
+        script.src = url;
+        script.onerror = this.loadErrorCallback.bind(this);
+        script.defer = true;
+        script.async = true;
+        if (this.nonce) {
+            script.nonce = this.nonce;
+        }
+        document.head.appendChild(script);
+    }
+    /**
+     * Reset the loader state.
+     */
+    reset() {
+        this.deleteScript();
+        this.done = false;
+        this.loading = false;
+        this.errors = [];
+        this.onerrorEvent = null;
+    }
+    resetIfRetryingFailed() {
+        if (this.failed) {
+            this.reset();
+        }
+    }
+    loadErrorCallback(e) {
+        this.errors.push(e);
+        if (this.errors.length <= this.retries) {
+            const delay = this.errors.length * Math.pow(2, this.errors.length);
+            console.log(`Failed to load Google Maps script, retrying in ${delay} ms.`);
+            setTimeout(() => {
+                this.deleteScript();
+                this.setScript();
+            }, delay);
+        }
+        else {
+            this.onerrorEvent = e;
+            this.callback();
+        }
+    }
+    setCallback() {
+        window.__googleMapsCallback = this.callback.bind(this);
+    }
+    callback() {
+        this.done = true;
+        this.loading = false;
+        this.callbacks.forEach((cb) => {
+            cb(this.onerrorEvent);
+        });
+        this.callbacks = [];
+    }
+    execute() {
+        this.resetIfRetryingFailed();
+        if (this.done) {
+            this.callback();
+        }
+        else {
+            // short circuit and warn if google.maps is already loaded
+            if (window.google && window.google.maps && window.google.maps.version) {
+                console.warn("Google Maps already loaded outside @googlemaps/js-api-loader." +
+                    "This may result in undesirable behavior as options and script parameters may not match.");
+                this.callback();
+                return;
+            }
+            if (this.loading) ;
+            else {
+                this.loading = true;
+                this.setCallback();
+                this.setScript();
+            }
+        }
+    }
+}
+
+
+//# sourceMappingURL=index.esm.js.map
+
+
+/***/ }),
+
+/***/ "./node_modules/@googlemaps/markerclusterer/dist/index.esm.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/@googlemaps/markerclusterer/dist/index.esm.js ***!
+  \********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "AbstractAlgorithm": () => (/* binding */ AbstractAlgorithm),
+/* harmony export */   "AbstractViewportAlgorithm": () => (/* binding */ AbstractViewportAlgorithm),
+/* harmony export */   "Cluster": () => (/* binding */ Cluster),
+/* harmony export */   "ClusterStats": () => (/* binding */ ClusterStats),
+/* harmony export */   "DBScanAlgorithm": () => (/* binding */ DBScanAlgorithm),
+/* harmony export */   "DefaultRenderer": () => (/* binding */ DefaultRenderer),
+/* harmony export */   "GridAlgorithm": () => (/* binding */ GridAlgorithm),
+/* harmony export */   "KmeansAlgorithm": () => (/* binding */ KmeansAlgorithm),
+/* harmony export */   "MarkerClusterer": () => (/* binding */ MarkerClusterer),
+/* harmony export */   "MarkerClustererEvents": () => (/* binding */ MarkerClustererEvents),
+/* harmony export */   "NoopAlgorithm": () => (/* binding */ NoopAlgorithm),
+/* harmony export */   "SuperClusterAlgorithm": () => (/* binding */ SuperClusterAlgorithm),
+/* harmony export */   "defaultOnClusterClickHandler": () => (/* binding */ defaultOnClusterClickHandler),
+/* harmony export */   "distanceBetweenPoints": () => (/* binding */ distanceBetweenPoints),
+/* harmony export */   "extendBoundsToPaddedViewport": () => (/* binding */ extendBoundsToPaddedViewport),
+/* harmony export */   "extendPixelBounds": () => (/* binding */ extendPixelBounds),
+/* harmony export */   "filterMarkersToPaddedViewport": () => (/* binding */ filterMarkersToPaddedViewport),
+/* harmony export */   "noop": () => (/* binding */ noop),
+/* harmony export */   "pixelBoundsToLatLngBounds": () => (/* binding */ pixelBoundsToLatLngBounds)
+/* harmony export */ });
+/* harmony import */ var _turf_helpers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @turf/helpers */ "./node_modules/@turf/helpers/dist/es/index.js");
+/* harmony import */ var _turf_clusters_kmeans__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @turf/clusters-kmeans */ "./node_modules/@turf/clusters-kmeans/dist/es/index.js");
+/* harmony import */ var _turf_clusters_dbscan__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @turf/clusters-dbscan */ "./node_modules/@turf/clusters-dbscan/dist/es/index.js");
+/* harmony import */ var supercluster__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! supercluster */ "./node_modules/supercluster/index.js");
+/* harmony import */ var fast_deep_equal_es6__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! fast-deep-equal/es6 */ "./node_modules/fast-deep-equal/es6/index.js");
+/* harmony import */ var fast_deep_equal_es6__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(fast_deep_equal_es6__WEBPACK_IMPORTED_MODULE_4__);
+
+
+
+
+
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+class Cluster {
+    constructor({ markers, position }) {
+        this.markers = markers;
+        if (position) {
+            if (position instanceof google.maps.LatLng) {
+                this._position = position;
+            }
+            else {
+                this._position = new google.maps.LatLng(position);
+            }
+        }
+    }
+    get bounds() {
+        if (this.markers.length === 0 && !this._position) {
+            return undefined;
+        }
+        return this.markers.reduce((bounds, marker) => {
+            return bounds.extend(marker.getPosition());
+        }, new google.maps.LatLngBounds(this._position, this._position));
+    }
+    get position() {
+        return this._position || this.bounds.getCenter();
+    }
+    /**
+     * Get the count of **visible** markers.
+     */
+    get count() {
+        return this.markers.filter((m) => m.getVisible())
+            .length;
+    }
+    /**
+     * Add a marker to the cluster.
+     */
+    push(marker) {
+        this.markers.push(marker);
+    }
+    /**
+     * Cleanup references and remove marker from map.
+     */
+    delete() {
+        if (this.marker) {
+            this.marker.setMap(null);
+            delete this.marker;
+        }
+        this.markers.length = 0;
+    }
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const filterMarkersToPaddedViewport = (map, mapCanvasProjection, markers, viewportPadding) => {
+    const extendedMapBounds = extendBoundsToPaddedViewport(map.getBounds(), mapCanvasProjection, viewportPadding);
+    return markers.filter((marker) => extendedMapBounds.contains(marker.getPosition()));
+};
+/**
+ * Extends a bounds by a number of pixels in each direction.
+ */
+const extendBoundsToPaddedViewport = (bounds, projection, pixels) => {
+    const { northEast, southWest } = latLngBoundsToPixelBounds(bounds, projection);
+    const extendedPixelBounds = extendPixelBounds({ northEast, southWest }, pixels);
+    return pixelBoundsToLatLngBounds(extendedPixelBounds, projection);
+};
+/**
+ * @hidden
+ */
+const distanceBetweenPoints = (p1, p2) => {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = ((p2.lat - p1.lat) * Math.PI) / 180;
+    const dLon = ((p2.lng - p1.lng) * Math.PI) / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((p1.lat * Math.PI) / 180) *
+            Math.cos((p2.lat * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+/**
+ * @hidden
+ */
+const latLngBoundsToPixelBounds = (bounds, projection) => {
+    return {
+        northEast: projection.fromLatLngToDivPixel(bounds.getNorthEast()),
+        southWest: projection.fromLatLngToDivPixel(bounds.getSouthWest()),
+    };
+};
+/**
+ * @hidden
+ */
+const extendPixelBounds = ({ northEast, southWest }, pixels) => {
+    northEast.x += pixels;
+    northEast.y -= pixels;
+    southWest.x -= pixels;
+    southWest.y += pixels;
+    return { northEast, southWest };
+};
+/**
+ * @hidden
+ */
+const pixelBoundsToLatLngBounds = ({ northEast, southWest }, projection) => {
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(projection.fromDivPixelToLatLng(northEast));
+    bounds.extend(projection.fromDivPixelToLatLng(southWest));
+    return bounds;
+};
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * @hidden
+ */
+class AbstractAlgorithm {
+    constructor({ maxZoom = 16 }) {
+        this.maxZoom = maxZoom;
+    }
+    /**
+     * Helper function to bypass clustering based upon some map state such as
+     * zoom, number of markers, etc.
+     *
+     * ```typescript
+     *  cluster({markers, map}: AlgorithmInput): Cluster[] {
+     *    if (shouldBypassClustering(map)) {
+     *      return this.noop({markers, map})
+     *    }
+     * }
+     * ```
+     */
+    noop({ markers }) {
+        return noop(markers);
+    }
+}
+/**
+ * Abstract viewport algorithm proves a class to filter markers by a padded
+ * viewport. This is a common optimization.
+ *
+ * @hidden
+ */
+class AbstractViewportAlgorithm extends AbstractAlgorithm {
+    constructor(_a) {
+        var { viewportPadding = 60 } = _a, options = __rest(_a, ["viewportPadding"]);
+        super(options);
+        this.viewportPadding = 60;
+        this.viewportPadding = viewportPadding;
+    }
+    calculate({ markers, map, mapCanvasProjection, }) {
+        if (map.getZoom() >= this.maxZoom) {
+            return {
+                clusters: this.noop({
+                    markers,
+                    map,
+                    mapCanvasProjection,
+                }),
+                changed: false,
+            };
+        }
+        return {
+            clusters: this.cluster({
+                markers: filterMarkersToPaddedViewport(map, mapCanvasProjection, markers, this.viewportPadding),
+                map,
+                mapCanvasProjection,
+            }),
+        };
+    }
+}
+/**
+ * @hidden
+ */
+const noop = (markers) => {
+    const clusters = markers.map((marker) => new Cluster({
+        position: marker.getPosition(),
+        markers: [marker],
+    }));
+    return clusters;
+};
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * The default Grid algorithm historically used in Google Maps marker
+ * clustering.
+ *
+ * The Grid algorithm does not implement caching and markers may flash as the
+ * viewport changes. Instead use {@link SuperClusterAlgorithm}.
+ */
+class GridAlgorithm extends AbstractViewportAlgorithm {
+    constructor(_a) {
+        var { maxDistance = 40000, gridSize = 40 } = _a, options = __rest(_a, ["maxDistance", "gridSize"]);
+        super(options);
+        this.clusters = [];
+        this.maxDistance = maxDistance;
+        this.gridSize = gridSize;
+    }
+    cluster({ markers, map, mapCanvasProjection, }) {
+        this.clusters = [];
+        markers.forEach((marker) => {
+            this.addToClosestCluster(marker, map, mapCanvasProjection);
+        });
+        return this.clusters;
+    }
+    addToClosestCluster(marker, map, projection) {
+        let maxDistance = this.maxDistance; // Some large number
+        let cluster = null;
+        for (let i = 0; i < this.clusters.length; i++) {
+            const candidate = this.clusters[i];
+            const distance = distanceBetweenPoints(candidate.bounds.getCenter().toJSON(), marker.getPosition().toJSON());
+            if (distance < maxDistance) {
+                maxDistance = distance;
+                cluster = candidate;
+            }
+        }
+        if (cluster &&
+            extendBoundsToPaddedViewport(cluster.bounds, projection, this.gridSize).contains(marker.getPosition())) {
+            cluster.push(marker);
+        }
+        else {
+            const cluster = new Cluster({ markers: [marker] });
+            this.clusters.push(cluster);
+        }
+    }
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Noop algorithm does not generate any clusters or filter markers by the an extended viewport.
+ */
+class NoopAlgorithm extends AbstractAlgorithm {
+    constructor(_a) {
+        var options = __rest(_a, []);
+        super(options);
+    }
+    calculate({ markers, map, mapCanvasProjection, }) {
+        return {
+            clusters: this.cluster({ markers, map, mapCanvasProjection }),
+            changed: false,
+        };
+    }
+    cluster(input) {
+        return this.noop(input);
+    }
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Experimental algorithm using Kmeans.
+ *
+ * The Grid algorithm does not implement caching and markers may flash as the
+ * viewport changes. Instead use {@link SuperClusterAlgorithm}.
+ *
+ * @see https://www.npmjs.com/package/@turf/clusters-kmeans
+ */
+class KmeansAlgorithm extends AbstractViewportAlgorithm {
+    constructor(_a) {
+        var { numberOfClusters } = _a, options = __rest(_a, ["numberOfClusters"]);
+        super(options);
+        this.numberOfClusters = numberOfClusters;
+    }
+    cluster({ markers, map }) {
+        const clusters = [];
+        if (markers.length === 0) {
+            return clusters;
+        }
+        const points = (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.featureCollection)(markers.map((marker) => {
+            return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)([marker.getPosition().lng(), marker.getPosition().lat()]);
+        }));
+        let numberOfClusters;
+        if (this.numberOfClusters instanceof Function) {
+            numberOfClusters = this.numberOfClusters(markers.length, map.getZoom());
+        }
+        else {
+            numberOfClusters = this.numberOfClusters;
+        }
+        (0,_turf_clusters_kmeans__WEBPACK_IMPORTED_MODULE_1__["default"])(points, { numberOfClusters }).features.forEach((point, i) => {
+            if (!clusters[point.properties.cluster]) {
+                clusters[point.properties.cluster] = new Cluster({
+                    position: {
+                        lng: point.properties.centroid[0],
+                        lat: point.properties.centroid[1],
+                    },
+                    markers: [],
+                });
+            }
+            clusters[point.properties.cluster].push(markers[i]);
+        });
+        return clusters;
+    }
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const DEFAULT_INTERNAL_DBSCAN_OPTION = {
+    units: "kilometers",
+    mutate: false,
+    minPoints: 1,
+};
+/**
+ *
+ * **This algorithm is not yet ready for use!**
+ *
+ * Experimental algorithm using DBScan.
+ *
+ * The Grid algorithm does not implement caching and markers may flash as the
+ * viewport changes. Instead use {@link SuperClusterAlgorithm}.
+ *
+ * @see https://www.npmjs.com/package/@turf/clusters-dbscan
+ */
+class DBScanAlgorithm extends AbstractViewportAlgorithm {
+    constructor(_a) {
+        var { maxDistance = 200, minPoints = DEFAULT_INTERNAL_DBSCAN_OPTION.minPoints } = _a, options = __rest(_a, ["maxDistance", "minPoints"]);
+        super(options);
+        this.maxDistance = maxDistance;
+        this.options = Object.assign(Object.assign({}, DEFAULT_INTERNAL_DBSCAN_OPTION), { minPoints });
+    }
+    cluster({ markers, mapCanvasProjection, }) {
+        const points = (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.featureCollection)(markers.map((marker) => {
+            const projectedPoint = mapCanvasProjection.fromLatLngToContainerPixel(marker.getPosition());
+            return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)([projectedPoint.x, projectedPoint.y]);
+        }));
+        const grouped = [];
+        (0,_turf_clusters_dbscan__WEBPACK_IMPORTED_MODULE_2__["default"])(points, this.maxDistance, this.options).features.forEach((point, i) => {
+            if (!grouped[point.properties.cluster]) {
+                grouped[point.properties.cluster] = [];
+            }
+            grouped[point.properties.cluster].push(markers[i]);
+        });
+        return grouped.map((markers) => new Cluster({ markers }));
+    }
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * A very fast JavaScript algorithm for geospatial point clustering using KD trees.
+ *
+ * @see https://www.npmjs.com/package/supercluster for more information on options.
+ */
+class SuperClusterAlgorithm extends AbstractAlgorithm {
+    constructor(_a) {
+        var { maxZoom, radius = 60 } = _a, options = __rest(_a, ["maxZoom", "radius"]);
+        super({ maxZoom });
+        this.superCluster = new supercluster__WEBPACK_IMPORTED_MODULE_3__["default"](Object.assign({ maxZoom: this.maxZoom, radius }, options));
+        this.state = { zoom: null };
+    }
+    calculate(input) {
+        let changed = false;
+        if (!fast_deep_equal_es6__WEBPACK_IMPORTED_MODULE_4___default()(input.markers, this.markers)) {
+            changed = true;
+            // TODO use proxy to avoid copy?
+            this.markers = [...input.markers];
+            const points = this.markers.map((marker) => {
+                return {
+                    type: "Feature",
+                    geometry: {
+                        type: "Point",
+                        coordinates: [
+                            marker.getPosition().lng(),
+                            marker.getPosition().lat(),
+                        ],
+                    },
+                    properties: { marker },
+                };
+            });
+            this.superCluster.load(points);
+        }
+        const state = { zoom: input.map.getZoom() };
+        if (!changed) {
+            if (this.state.zoom > this.maxZoom && state.zoom > this.maxZoom) ;
+            else {
+                changed = changed || !fast_deep_equal_es6__WEBPACK_IMPORTED_MODULE_4___default()(this.state, state);
+            }
+        }
+        this.state = state;
+        if (changed) {
+            this.clusters = this.cluster(input);
+        }
+        return { clusters: this.clusters, changed };
+    }
+    cluster({ map }) {
+        return this.superCluster
+            .getClusters([-180, -90, 180, 90], Math.round(map.getZoom()))
+            .map(this.transformCluster.bind(this));
+    }
+    transformCluster({ geometry: { coordinates: [lng, lat], }, properties, }) {
+        if (properties.cluster) {
+            return new Cluster({
+                markers: this.superCluster
+                    .getLeaves(properties.cluster_id, Infinity)
+                    .map((leaf) => leaf.properties.marker),
+                position: new google.maps.LatLng({ lat, lng }),
+            });
+        }
+        else {
+            const marker = properties.marker;
+            return new Cluster({
+                markers: [marker],
+                position: marker.getPosition(),
+            });
+        }
+    }
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Provides statistics on all clusters in the current render cycle for use in {@link Renderer.render}.
+ */
+class ClusterStats {
+    constructor(markers, clusters) {
+        this.markers = { sum: markers.length };
+        const clusterMarkerCounts = clusters.map((a) => a.count);
+        const clusterMarkerSum = clusterMarkerCounts.reduce((a, b) => a + b, 0);
+        this.clusters = {
+            count: clusters.length,
+            markers: {
+                mean: clusterMarkerSum / clusters.length,
+                sum: clusterMarkerSum,
+                min: Math.min(...clusterMarkerCounts),
+                max: Math.max(...clusterMarkerCounts),
+            },
+        };
+    }
+}
+class DefaultRenderer {
+    /**
+     * The default render function for the library used by {@link MarkerClusterer}.
+     *
+     * Currently set to use the following:
+     *
+     * ```typescript
+     * // change color if this cluster has more markers than the mean cluster
+     * const color =
+     *   count > Math.max(10, stats.clusters.markers.mean)
+     *     ? "#ff0000"
+     *     : "#0000ff";
+     *
+     * // create svg url with fill color
+     * const svg = window.btoa(`
+     * <svg fill="${color}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+     *   <circle cx="120" cy="120" opacity=".6" r="70" />
+     *   <circle cx="120" cy="120" opacity=".3" r="90" />
+     *   <circle cx="120" cy="120" opacity=".2" r="110" />
+     *   <circle cx="120" cy="120" opacity=".1" r="130" />
+     * </svg>`);
+     *
+     * // create marker using svg icon
+     * return new google.maps.Marker({
+     *   position,
+     *   icon: {
+     *     url: `data:image/svg+xml;base64,${svg}`,
+     *     scaledSize: new google.maps.Size(45, 45),
+     *   },
+     *   label: {
+     *     text: String(count),
+     *     color: "rgba(255,255,255,0.9)",
+     *     fontSize: "12px",
+     *   },
+     *   // adjust zIndex to be above other markers
+     *   zIndex: 1000 + count,
+     * });
+     * ```
+     */
+    render({ count, position }, stats) {
+        // change color if this cluster has more markers than the mean cluster
+        const color = count > Math.max(10, stats.clusters.markers.mean) ? "#ff0000" : "#0000ff";
+        // create svg url with fill color
+        const svg = window.btoa(`
+  <svg fill="${color}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+    <circle cx="120" cy="120" opacity=".6" r="70" />
+    <circle cx="120" cy="120" opacity=".3" r="90" />
+    <circle cx="120" cy="120" opacity=".2" r="110" />
+  </svg>`);
+        // create marker using svg icon
+        return new google.maps.Marker({
+            position,
+            icon: {
+                url: `data:image/svg+xml;base64,${svg}`,
+                scaledSize: new google.maps.Size(45, 45),
+            },
+            label: {
+                text: String(count),
+                color: "rgba(255,255,255,0.9)",
+                fontSize: "12px",
+            },
+            title: `Cluster of ${count} markers`,
+            // adjust zIndex to be above other markers
+            zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
+        });
+    }
+}
+
+/**
+ * Copyright 2019 Google LLC. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Extends an object's prototype by another's.
+ *
+ * @param type1 The Type to be extended.
+ * @param type2 The Type to extend with.
+ * @ignore
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extend(type1, type2) {
+    /* istanbul ignore next */
+    // eslint-disable-next-line prefer-const
+    for (let property in type2.prototype) {
+        type1.prototype[property] = type2.prototype[property];
+    }
+}
+/**
+ * @ignore
+ */
+class OverlayViewSafe {
+    constructor() {
+        // MarkerClusterer implements google.maps.OverlayView interface. We use the
+        // extend function to extend MarkerClusterer with google.maps.OverlayView
+        // because it might not always be available when the code is defined so we
+        // look for it at the last possible moment. If it doesn't exist now then
+        // there is no point going ahead :)
+        extend(OverlayViewSafe, google.maps.OverlayView);
+    }
+}
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var MarkerClustererEvents;
+(function (MarkerClustererEvents) {
+    MarkerClustererEvents["CLUSTERING_BEGIN"] = "clusteringbegin";
+    MarkerClustererEvents["CLUSTERING_END"] = "clusteringend";
+    MarkerClustererEvents["CLUSTER_CLICK"] = "click";
+})(MarkerClustererEvents || (MarkerClustererEvents = {}));
+const defaultOnClusterClickHandler = (_, cluster, map) => {
+    map.fitBounds(cluster.bounds);
+};
+/**
+ * MarkerClusterer creates and manages per-zoom-level clusters for large amounts
+ * of markers. See {@link MarkerClustererOptions} for more details.
+ *
+ */
+class MarkerClusterer extends OverlayViewSafe {
+    constructor({ map, markers = [], algorithm = new SuperClusterAlgorithm({}), renderer = new DefaultRenderer(), onClusterClick = defaultOnClusterClickHandler, }) {
+        super();
+        this.markers = [...markers];
+        this.clusters = [];
+        this.algorithm = algorithm;
+        this.renderer = renderer;
+        this.onClusterClick = onClusterClick;
+        if (map) {
+            this.setMap(map);
+        }
+    }
+    addMarker(marker, noDraw) {
+        if (this.markers.includes(marker)) {
+            return;
+        }
+        this.markers.push(marker);
+        if (!noDraw) {
+            this.render();
+        }
+    }
+    addMarkers(markers, noDraw) {
+        markers.forEach((marker) => {
+            this.addMarker(marker, true);
+        });
+        if (!noDraw) {
+            this.render();
+        }
+    }
+    removeMarker(marker, noDraw) {
+        const index = this.markers.indexOf(marker);
+        if (index === -1) {
+            // Marker is not in our list of markers, so do nothing:
+            return false;
+        }
+        marker.setMap(null);
+        this.markers.splice(index, 1); // Remove the marker from the list of managed markers
+        if (!noDraw) {
+            this.render();
+        }
+        return true;
+    }
+    removeMarkers(markers, noDraw) {
+        let removed = false;
+        markers.forEach((marker) => {
+            removed = this.removeMarker(marker, true) || removed;
+        });
+        if (removed && !noDraw) {
+            this.render();
+        }
+        return removed;
+    }
+    clearMarkers(noDraw) {
+        this.markers.length = 0;
+        if (!noDraw) {
+            this.render();
+        }
+    }
+    /**
+     * Recalculates and draws all the marker clusters.
+     */
+    render() {
+        const map = this.getMap();
+        if (map instanceof google.maps.Map && this.getProjection()) {
+            google.maps.event.trigger(this, MarkerClustererEvents.CLUSTERING_BEGIN, this);
+            const { clusters, changed } = this.algorithm.calculate({
+                markers: this.markers,
+                map,
+                mapCanvasProjection: this.getProjection(),
+            });
+            // allow algorithms to return flag on whether the clusters/markers have changed
+            if (changed || changed == undefined) {
+                // reset visibility of markers and clusters
+                this.reset();
+                // store new clusters
+                this.clusters = clusters;
+                this.renderClusters();
+            }
+            google.maps.event.trigger(this, MarkerClustererEvents.CLUSTERING_END, this);
+        }
+    }
+    onAdd() {
+        this.idleListener = this.getMap().addListener("idle", this.render.bind(this));
+        this.render();
+    }
+    onRemove() {
+        google.maps.event.removeListener(this.idleListener);
+        this.reset();
+    }
+    reset() {
+        this.markers.forEach((marker) => marker.setMap(null));
+        this.clusters.forEach((cluster) => cluster.delete());
+        this.clusters = [];
+    }
+    renderClusters() {
+        // generate stats to pass to renderers
+        const stats = new ClusterStats(this.markers, this.clusters);
+        const map = this.getMap();
+        this.clusters.forEach((cluster) => {
+            if (cluster.markers.length === 1) {
+                cluster.marker = cluster.markers[0];
+            }
+            else {
+                cluster.marker = this.renderer.render(cluster, stats);
+                if (this.onClusterClick) {
+                    cluster.marker.addListener("click", 
+                    /* istanbul ignore next */
+                    (event) => {
+                        google.maps.event.trigger(this, MarkerClustererEvents.CLUSTER_CLICK, cluster);
+                        this.onClusterClick(event, cluster, map);
+                    });
+                }
+            }
+            cluster.marker.setMap(map);
+        });
+    }
+}
+
+
+//# sourceMappingURL=index.esm.js.map
+
+
+/***/ }),
+
+/***/ "./node_modules/density-clustering/lib/DBSCAN.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/density-clustering/lib/DBSCAN.js ***!
+  \*******************************************************/
+/***/ ((module) => {
+
+/**
+ * DBSCAN - Density based clustering
+ *
+ * @author Lukasz Krawczyk <contact@lukaszkrawczyk.eu>
+ * @copyright MIT
+ */
+
+/**
+ * DBSCAN class construcotr
+ * @constructor
+ *
+ * @param {Array} dataset
+ * @param {number} epsilon
+ * @param {number} minPts
+ * @param {function} distanceFunction
+ * @returns {DBSCAN}
+ */
+function DBSCAN(dataset, epsilon, minPts, distanceFunction) {
+  /** @type {Array} */
+  this.dataset = [];
+  /** @type {number} */
+  this.epsilon = 1;
+  /** @type {number} */
+  this.minPts = 2;
+  /** @type {function} */
+  this.distance = this._euclideanDistance;
+  /** @type {Array} */
+  this.clusters = [];
+  /** @type {Array} */
+  this.noise = [];
+
+  // temporary variables used during computation
+
+  /** @type {Array} */
+  this._visited = [];
+  /** @type {Array} */
+  this._assigned = [];
+  /** @type {number} */
+  this._datasetLength = 0;
+
+  this._init(dataset, epsilon, minPts, distanceFunction);
+};
+
+/******************************************************************************/
+// public functions
+
+/**
+ * Start clustering
+ *
+ * @param {Array} dataset
+ * @param {number} epsilon
+ * @param {number} minPts
+ * @param {function} distanceFunction
+ * @returns {undefined}
+ * @access public
+ */
+DBSCAN.prototype.run = function(dataset, epsilon, minPts, distanceFunction) {
+  this._init(dataset, epsilon, minPts, distanceFunction);
+
+  for (var pointId = 0; pointId < this._datasetLength; pointId++) {
+    // if point is not visited, check if it forms a cluster
+    if (this._visited[pointId] !== 1) {
+      this._visited[pointId] = 1;
+
+      // if closest neighborhood is too small to form a cluster, mark as noise
+      var neighbors = this._regionQuery(pointId);
+
+      if (neighbors.length < this.minPts) {
+        this.noise.push(pointId);
+      } else {
+        // create new cluster and add point
+        var clusterId = this.clusters.length;
+        this.clusters.push([]);
+        this._addToCluster(pointId, clusterId);
+
+        this._expandCluster(clusterId, neighbors);
+      }
+    }
+  }
+
+  return this.clusters;
+};
+
+/******************************************************************************/
+// protected functions
+
+/**
+ * Set object properties
+ *
+ * @param {Array} dataset
+ * @param {number} epsilon
+ * @param {number} minPts
+ * @param {function} distance
+ * @returns {undefined}
+ * @access protected
+ */
+DBSCAN.prototype._init = function(dataset, epsilon, minPts, distance) {
+
+  if (dataset) {
+
+    if (!(dataset instanceof Array)) {
+      throw Error('Dataset must be of type array, ' +
+        typeof dataset + ' given');
+    }
+
+    this.dataset = dataset;
+    this.clusters = [];
+    this.noise = [];
+
+    this._datasetLength = dataset.length;
+    this._visited = new Array(this._datasetLength);
+    this._assigned = new Array(this._datasetLength);
+  }
+
+  if (epsilon) {
+    this.epsilon = epsilon;
+  }
+
+  if (minPts) {
+    this.minPts = minPts;
+  }
+
+  if (distance) {
+    this.distance = distance;
+  }
+};
+
+/**
+ * Expand cluster to closest points of given neighborhood
+ *
+ * @param {number} clusterId
+ * @param {Array} neighbors
+ * @returns {undefined}
+ * @access protected
+ */
+DBSCAN.prototype._expandCluster = function(clusterId, neighbors) {
+
+  /**
+   * It's very important to calculate length of neighbors array each time,
+   * as the number of elements changes over time
+   */
+  for (var i = 0; i < neighbors.length; i++) {
+    var pointId2 = neighbors[i];
+
+    if (this._visited[pointId2] !== 1) {
+      this._visited[pointId2] = 1;
+      var neighbors2 = this._regionQuery(pointId2);
+
+      if (neighbors2.length >= this.minPts) {
+        neighbors = this._mergeArrays(neighbors, neighbors2);
+      }
+    }
+
+    // add to cluster
+    if (this._assigned[pointId2] !== 1) {
+      this._addToCluster(pointId2, clusterId);
+    }
+  }
+};
+
+/**
+ * Add new point to cluster
+ *
+ * @param {number} pointId
+ * @param {number} clusterId
+ */
+DBSCAN.prototype._addToCluster = function(pointId, clusterId) {
+  this.clusters[clusterId].push(pointId);
+  this._assigned[pointId] = 1;
+};
+
+/**
+ * Find all neighbors around given point
+ *
+ * @param {number} pointId,
+ * @param {number} epsilon
+ * @returns {Array}
+ * @access protected
+ */
+DBSCAN.prototype._regionQuery = function(pointId) {
+  var neighbors = [];
+
+  for (var id = 0; id < this._datasetLength; id++) {
+    var dist = this.distance(this.dataset[pointId], this.dataset[id]);
+    if (dist < this.epsilon) {
+      neighbors.push(id);
+    }
+  }
+
+  return neighbors;
+};
+
+/******************************************************************************/
+// helpers
+
+/**
+ * @param {Array} a
+ * @param {Array} b
+ * @returns {Array}
+ * @access protected
+ */
+DBSCAN.prototype._mergeArrays = function(a, b) {
+  var len = b.length;
+
+  for (var i = 0; i < len; i++) {
+    var P = b[i];
+    if (a.indexOf(P) < 0) {
+      a.push(P);
+    }
+  }
+
+  return a;
+};
+
+/**
+ * Calculate euclidean distance in multidimensional space
+ *
+ * @param {Array} p
+ * @param {Array} q
+ * @returns {number}
+ * @access protected
+ */
+DBSCAN.prototype._euclideanDistance = function(p, q) {
+  var sum = 0;
+  var i = Math.min(p.length, q.length);
+
+  while (i--) {
+    sum += (p[i] - q[i]) * (p[i] - q[i]);
+  }
+
+  return Math.sqrt(sum);
+};
+
+if ( true && module.exports) {
+  module.exports = DBSCAN;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/density-clustering/lib/KMEANS.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/density-clustering/lib/KMEANS.js ***!
+  \*******************************************************/
+/***/ ((module) => {
+
+﻿/**
+ * KMEANS clustering
+ *
+ * @author Lukasz Krawczyk <contact@lukaszkrawczyk.eu>
+ * @copyright MIT
+ */
+
+/**
+ * KMEANS class constructor
+ * @constructor
+ *
+ * @param {Array} dataset
+ * @param {number} k - number of clusters
+ * @param {function} distance - distance function
+ * @returns {KMEANS}
+ */
+ function KMEANS(dataset, k, distance) {
+  this.k = 3; // number of clusters
+  this.dataset = []; // set of feature vectors
+  this.assignments = []; // set of associated clusters for each feature vector
+  this.centroids = []; // vectors for our clusters
+
+  this.init(dataset, k, distance);
+}
+
+/**
+ * @returns {undefined}
+ */
+KMEANS.prototype.init = function(dataset, k, distance) {
+  this.assignments = [];
+  this.centroids = [];
+
+  if (typeof dataset !== 'undefined') {
+    this.dataset = dataset;
+  }
+
+  if (typeof k !== 'undefined') {
+    this.k = k;
+  }
+
+  if (typeof distance !== 'undefined') {
+    this.distance = distance;
+  }
+};
+
+/**
+ * @returns {undefined}
+ */
+KMEANS.prototype.run = function(dataset, k) {
+  this.init(dataset, k);
+
+  var len = this.dataset.length;
+
+  // initialize centroids
+  for (var i = 0; i < this.k; i++) {
+    this.centroids[i] = this.randomCentroid();
+	}
+
+  var change = true;
+  while(change) {
+
+    // assign feature vectors to clusters
+    change = this.assign();
+
+    // adjust location of centroids
+    for (var centroidId = 0; centroidId < this.k; centroidId++) {
+      var mean = new Array(maxDim);
+      var count = 0;
+
+      // init mean vector
+      for (var dim = 0; dim < maxDim; dim++) {
+        mean[dim] = 0;
+      }
+
+      for (var j = 0; j < len; j++) {
+        var maxDim = this.dataset[j].length;
+
+        // if current cluster id is assigned to point
+        if (centroidId === this.assignments[j]) {
+          for (var dim = 0; dim < maxDim; dim++) {
+            mean[dim] += this.dataset[j][dim];
+          }
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        // if cluster contain points, adjust centroid position
+        for (var dim = 0; dim < maxDim; dim++) {
+          mean[dim] /= count;
+        }
+        this.centroids[centroidId] = mean;
+      } else {
+        // if cluster is empty, generate new random centroid
+        this.centroids[centroidId] = this.randomCentroid();
+        change = true;
+      }
+    }
+  }
+
+  return this.getClusters();
+};
+
+/**
+ * Generate random centroid
+ *
+ * @returns {Array}
+ */
+KMEANS.prototype.randomCentroid = function() {
+  var maxId = this.dataset.length -1;
+  var centroid;
+  var id;
+
+  do {
+    id = Math.round(Math.random() * maxId);
+    centroid = this.dataset[id];
+  } while (this.centroids.indexOf(centroid) >= 0);
+
+  return centroid;
+}
+
+/**
+ * Assign points to clusters
+ *
+ * @returns {boolean}
+ */
+KMEANS.prototype.assign = function() {
+  var change = false;
+  var len = this.dataset.length;
+  var closestCentroid;
+
+  for (var i = 0; i < len; i++) {
+    closestCentroid = this.argmin(this.dataset[i], this.centroids, this.distance);
+
+    if (closestCentroid != this.assignments[i]) {
+      this.assignments[i] = closestCentroid;
+      change = true;
+    }
+  }
+
+  return change;
+}
+
+/**
+ * Extract information about clusters
+ *
+ * @returns {undefined}
+ */
+KMEANS.prototype.getClusters = function() {
+  var clusters = new Array(this.k);
+  var centroidId;
+
+  for (var pointId = 0; pointId < this.assignments.length; pointId++) {
+    centroidId = this.assignments[pointId];
+
+    // init empty cluster
+    if (typeof clusters[centroidId] === 'undefined') {
+      clusters[centroidId] = [];
+    }
+
+    clusters[centroidId].push(pointId);
+  }
+
+  return clusters;
+};
+
+// utils
+
+/**
+ * @params {Array} point
+ * @params {Array.<Array>} set
+ * @params {Function} f
+ * @returns {number}
+ */
+KMEANS.prototype.argmin = function(point, set, f) {
+  var min = Number.MAX_VALUE;
+  var arg = 0;
+  var len = set.length;
+  var d;
+
+  for (var i = 0; i < len; i++) {
+    d = f(point, set[i]);
+    if (d < min) {
+      min = d;
+      arg = i;
+    }
+  }
+
+  return arg;
+};
+
+/**
+ * Euclidean distance
+ *
+ * @params {number} p
+ * @params {number} q
+ * @returns {number}
+ */
+KMEANS.prototype.distance = function(p, q) {
+  var sum = 0;
+  var i = Math.min(p.length, q.length);
+
+  while (i--) {
+    var diff = p[i] - q[i];
+    sum += diff * diff;
+  }
+
+  return Math.sqrt(sum);
+};
+
+if ( true && module.exports) {
+  module.exports = KMEANS;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/density-clustering/lib/OPTICS.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/density-clustering/lib/OPTICS.js ***!
+  \*******************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+/**
+ * @requires ./PriorityQueue.js
+ */
+
+if ( true && module.exports) {
+      var PriorityQueue = __webpack_require__(/*! ./PriorityQueue.js */ "./node_modules/density-clustering/lib/PriorityQueue.js");
+}
+
+/**
+ * OPTICS - Ordering points to identify the clustering structure
+ *
+ * @author Lukasz Krawczyk <contact@lukaszkrawczyk.eu>
+ * @copyright MIT
+ */
+
+/**
+ * OPTICS class constructor
+ * @constructor
+ *
+ * @param {Array} dataset
+ * @param {number} epsilon
+ * @param {number} minPts
+ * @param {function} distanceFunction
+ * @returns {OPTICS}
+ */
+function OPTICS(dataset, epsilon, minPts, distanceFunction) {
+  /** @type {number} */
+  this.epsilon = 1;
+  /** @type {number} */
+  this.minPts = 1;
+  /** @type {function} */
+  this.distance = this._euclideanDistance;
+
+  // temporary variables used during computation
+
+  /** @type {Array} */
+  this._reachability = [];
+  /** @type {Array} */
+  this._processed = [];
+  /** @type {number} */
+  this._coreDistance = 0;
+  /** @type {Array} */
+  this._orderedList = [];
+
+  this._init(dataset, epsilon, minPts, distanceFunction);
+}
+
+/******************************************************************************/
+// pulic functions
+
+/**
+ * Start clustering
+ *
+ * @param {Array} dataset
+ * @returns {undefined}
+ * @access public
+ */
+OPTICS.prototype.run = function(dataset, epsilon, minPts, distanceFunction) {
+  this._init(dataset, epsilon, minPts, distanceFunction);
+
+  for (var pointId = 0, l = this.dataset.length; pointId < l; pointId++) {
+    if (this._processed[pointId] !== 1) {
+      this._processed[pointId] = 1;
+      this.clusters.push([pointId]);
+      var clusterId = this.clusters.length - 1;
+
+      this._orderedList.push(pointId);
+      var priorityQueue = new PriorityQueue(null, null, 'asc');
+      var neighbors = this._regionQuery(pointId);
+
+      // using priority queue assign elements to new cluster
+      if (this._distanceToCore(pointId) !== undefined) {
+        this._updateQueue(pointId, neighbors, priorityQueue);
+        this._expandCluster(clusterId, priorityQueue);
+      }
+    }
+  }
+
+  return this.clusters;
+};
+
+/**
+ * Generate reachability plot for all points
+ *
+ * @returns {array}
+ * @access public
+ */
+OPTICS.prototype.getReachabilityPlot = function() {
+  var reachabilityPlot = [];
+
+  for (var i = 0, l = this._orderedList.length; i < l; i++) {
+    var pointId = this._orderedList[i];
+    var distance = this._reachability[pointId];
+
+    reachabilityPlot.push([pointId, distance]);
+  }
+
+  return reachabilityPlot;
+};
+
+/******************************************************************************/
+// protected functions
+
+/**
+ * Set object properties
+ *
+ * @param {Array} dataset
+ * @param {number} epsilon
+ * @param {number} minPts
+ * @param {function} distance
+ * @returns {undefined}
+ * @access protected
+ */
+OPTICS.prototype._init = function(dataset, epsilon, minPts, distance) {
+
+  if (dataset) {
+
+    if (!(dataset instanceof Array)) {
+      throw Error('Dataset must be of type array, ' +
+        typeof dataset + ' given');
+    }
+
+    this.dataset = dataset;
+    this.clusters = [];
+    this._reachability = new Array(this.dataset.length);
+    this._processed = new Array(this.dataset.length);
+    this._coreDistance = 0;
+    this._orderedList = [];
+  }
+
+  if (epsilon) {
+    this.epsilon = epsilon;
+  }
+
+  if (minPts) {
+    this.minPts = minPts;
+  }
+
+  if (distance) {
+    this.distance = distance;
+  }
+};
+
+/**
+ * Update information in queue
+ *
+ * @param {number} pointId
+ * @param {Array} neighbors
+ * @param {PriorityQueue} queue
+ * @returns {undefined}
+ * @access protected
+ */
+OPTICS.prototype._updateQueue = function(pointId, neighbors, queue) {
+  var self = this;
+
+  this._coreDistance = this._distanceToCore(pointId);
+  neighbors.forEach(function(pointId2) {
+    if (self._processed[pointId2] === undefined) {
+      var dist = self.distance(self.dataset[pointId], self.dataset[pointId2]);
+      var newReachableDistance = Math.max(self._coreDistance, dist);
+
+      if (self._reachability[pointId2] === undefined) {
+        self._reachability[pointId2] = newReachableDistance;
+        queue.insert(pointId2, newReachableDistance);
+      } else {
+        if (newReachableDistance < self._reachability[pointId2]) {
+          self._reachability[pointId2] = newReachableDistance;
+          queue.remove(pointId2);
+          queue.insert(pointId2, newReachableDistance);
+        }
+      }
+    }
+  });
+};
+
+/**
+ * Expand cluster
+ *
+ * @param {number} clusterId
+ * @param {PriorityQueue} queue
+ * @returns {undefined}
+ * @access protected
+ */
+OPTICS.prototype._expandCluster = function(clusterId, queue) {
+  var queueElements = queue.getElements();
+
+  for (var p = 0, l = queueElements.length; p < l; p++) {
+    var pointId = queueElements[p];
+    if (this._processed[pointId] === undefined) {
+      var neighbors = this._regionQuery(pointId);
+      this._processed[pointId] = 1;
+
+      this.clusters[clusterId].push(pointId);
+      this._orderedList.push(pointId);
+
+      if (this._distanceToCore(pointId) !== undefined) {
+        this._updateQueue(pointId, neighbors, queue);
+        this._expandCluster(clusterId, queue);
+      }
+    }
+  }
+};
+
+/**
+ * Calculating distance to cluster core
+ *
+ * @param {number} pointId
+ * @returns {number}
+ * @access protected
+ */
+OPTICS.prototype._distanceToCore = function(pointId) {
+  var l = this.epsilon;
+  for (var coreDistCand = 0; coreDistCand < l; coreDistCand++) {
+    var neighbors = this._regionQuery(pointId, coreDistCand);
+    if (neighbors.length >= this.minPts) {
+      return coreDistCand;
+    }
+  }
+
+  return;
+};
+
+/**
+ * Find all neighbors around given point
+ *
+ * @param {number} pointId
+ * @param {number} epsilon
+ * @returns {Array}
+ * @access protected
+ */
+OPTICS.prototype._regionQuery = function(pointId, epsilon) {
+  epsilon = epsilon || this.epsilon;
+  var neighbors = [];
+
+  for (var id = 0, l = this.dataset.length; id < l; id++) {
+    if (this.distance(this.dataset[pointId], this.dataset[id]) < epsilon) {
+      neighbors.push(id);
+    }
+  }
+
+  return neighbors;
+};
+
+/******************************************************************************/
+// helpers
+
+/**
+ * Calculate euclidean distance in multidimensional space
+ *
+ * @param {Array} p
+ * @param {Array} q
+ * @returns {number}
+ * @access protected
+ */
+OPTICS.prototype._euclideanDistance = function(p, q) {
+  var sum = 0;
+  var i = Math.min(p.length, q.length);
+
+  while (i--) {
+    sum += (p[i] - q[i]) * (p[i] - q[i]);
+  }
+
+  return Math.sqrt(sum);
+};
+
+if ( true && module.exports) {
+  module.exports = OPTICS;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/density-clustering/lib/PriorityQueue.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/density-clustering/lib/PriorityQueue.js ***!
+  \**************************************************************/
+/***/ ((module) => {
+
+/**
+ * PriorityQueue
+ * Elements in this queue are sorted according to their value
+ *
+ * @author Lukasz Krawczyk <contact@lukaszkrawczyk.eu>
+ * @copyright MIT
+ */
+
+/**
+ * PriorityQueue class construcotr
+ * @constructor
+ *
+ * @example
+ * queue: [1,2,3,4]
+ * priorities: [4,1,2,3]
+ * > result = [1,4,2,3]
+ *
+ * @param {Array} elements
+ * @param {Array} priorities
+ * @param {string} sorting - asc / desc
+ * @returns {PriorityQueue}
+ */
+function PriorityQueue(elements, priorities, sorting) {
+  /** @type {Array} */
+  this._queue = [];
+  /** @type {Array} */
+  this._priorities = [];
+  /** @type {string} */
+  this._sorting = 'desc';
+
+  this._init(elements, priorities, sorting);
+};
+
+/**
+ * Insert element
+ *
+ * @param {Object} ele
+ * @param {Object} priority
+ * @returns {undefined}
+ * @access public
+ */
+PriorityQueue.prototype.insert = function(ele, priority) {
+  var indexToInsert = this._queue.length;
+  var index = indexToInsert;
+
+  while (index--) {
+    var priority2 = this._priorities[index];
+    if (this._sorting === 'desc') {
+      if (priority > priority2) {
+        indexToInsert = index;
+      }
+    } else {
+      if (priority < priority2) {
+        indexToInsert = index;
+      }
+    }
+  }
+
+  this._insertAt(ele, priority, indexToInsert);
+};
+
+/**
+ * Remove element
+ *
+ * @param {Object} ele
+ * @returns {undefined}
+ * @access public
+ */
+PriorityQueue.prototype.remove = function(ele) {
+  var index = this._queue.length;
+
+  while (index--) {
+    var ele2 = this._queue[index];
+    if (ele === ele2) {
+      this._queue.splice(index, 1);
+      this._priorities.splice(index, 1);
+      break;
+    }
+  }
+};
+
+/**
+ * For each loop wrapper
+ *
+ * @param {function} func
+ * @returs {undefined}
+ * @access public
+ */
+PriorityQueue.prototype.forEach = function(func) {
+  this._queue.forEach(func);
+};
+
+/**
+ * @returns {Array}
+ * @access public
+ */
+PriorityQueue.prototype.getElements = function() {
+  return this._queue;
+};
+
+/**
+ * @param {number} index
+ * @returns {Object}
+ * @access public
+ */
+PriorityQueue.prototype.getElementPriority = function(index) {
+  return this._priorities[index];
+};
+
+/**
+ * @returns {Array}
+ * @access public
+ */
+PriorityQueue.prototype.getPriorities = function() {
+  return this._priorities;
+};
+
+/**
+ * @returns {Array}
+ * @access public
+ */
+PriorityQueue.prototype.getElementsWithPriorities = function() {
+  var result = [];
+
+  for (var i = 0, l = this._queue.length; i < l; i++) {
+    result.push([this._queue[i], this._priorities[i]]);
+  }
+
+  return result;
+};
+
+/**
+ * Set object properties
+ *
+ * @param {Array} elements
+ * @param {Array} priorities
+ * @returns {undefined}
+ * @access protected
+ */
+PriorityQueue.prototype._init = function(elements, priorities, sorting) {
+
+  if (elements && priorities) {
+    this._queue = [];
+    this._priorities = [];
+
+    if (elements.length !== priorities.length) {
+      throw new Error('Arrays must have the same length');
+    }
+
+    for (var i = 0; i < elements.length; i++) {
+      this.insert(elements[i], priorities[i]);
+    }
+  }
+
+  if (sorting) {
+    this._sorting = sorting;
+  }
+};
+
+/**
+ * Insert element at given position
+ *
+ * @param {Object} ele
+ * @param {number} index
+ * @returns {undefined}
+ * @access protected
+ */
+PriorityQueue.prototype._insertAt = function(ele, priority, index) {
+  if (this._queue.length === index) {
+    this._queue.push(ele);
+    this._priorities.push(priority);
+  } else {
+    this._queue.splice(index, 0, ele);
+    this._priorities.splice(index, 0, priority);
+  }
+};
+
+if ( true && module.exports) {
+  module.exports = PriorityQueue;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/density-clustering/lib/index.js":
+/*!******************************************************!*\
+  !*** ./node_modules/density-clustering/lib/index.js ***!
+  \******************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+if ( true && module.exports) {
+    module.exports = {
+      DBSCAN: __webpack_require__(/*! ./DBSCAN.js */ "./node_modules/density-clustering/lib/DBSCAN.js"),
+      KMEANS: __webpack_require__(/*! ./KMEANS.js */ "./node_modules/density-clustering/lib/KMEANS.js"),
+      OPTICS: __webpack_require__(/*! ./OPTICS.js */ "./node_modules/density-clustering/lib/OPTICS.js"),
+      PriorityQueue: __webpack_require__(/*! ./PriorityQueue.js */ "./node_modules/density-clustering/lib/PriorityQueue.js")
+    };
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/fast-deep-equal/es6/index.js":
+/*!***************************************************!*\
+  !*** ./node_modules/fast-deep-equal/es6/index.js ***!
+  \***************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+// do not edit .js files directly - edit src/index.jst
+
+
+  var envHasBigInt64Array = typeof BigInt64Array !== 'undefined';
+
+
+module.exports = function equal(a, b) {
+  if (a === b) return true;
+
+  if (a && b && typeof a == 'object' && typeof b == 'object') {
+    if (a.constructor !== b.constructor) return false;
+
+    var length, i, keys;
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length != b.length) return false;
+      for (i = length; i-- !== 0;)
+        if (!equal(a[i], b[i])) return false;
+      return true;
+    }
+
+
+    if ((a instanceof Map) && (b instanceof Map)) {
+      if (a.size !== b.size) return false;
+      for (i of a.entries())
+        if (!b.has(i[0])) return false;
+      for (i of a.entries())
+        if (!equal(i[1], b.get(i[0]))) return false;
+      return true;
+    }
+
+    if ((a instanceof Set) && (b instanceof Set)) {
+      if (a.size !== b.size) return false;
+      for (i of a.entries())
+        if (!b.has(i[0])) return false;
+      return true;
+    }
+
+    if (ArrayBuffer.isView(a) && ArrayBuffer.isView(b)) {
+      length = a.length;
+      if (length != b.length) return false;
+      for (i = length; i-- !== 0;)
+        if (a[i] !== b[i]) return false;
+      return true;
+    }
+
+
+    if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
+    if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
+    if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
+
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) return false;
+
+    for (i = length; i-- !== 0;)
+      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
+
+    for (i = length; i-- !== 0;) {
+      var key = keys[i];
+
+      if (!equal(a[key], b[key])) return false;
+    }
+
+    return true;
+  }
+
+  // true if both NaN, false otherwise
+  return a!==a && b!==b;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/kdbush/src/index.js":
+/*!******************************************!*\
+  !*** ./node_modules/kdbush/src/index.js ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ KDBush)
+/* harmony export */ });
+/* harmony import */ var _sort__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./sort */ "./node_modules/kdbush/src/sort.js");
+/* harmony import */ var _range__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./range */ "./node_modules/kdbush/src/range.js");
+/* harmony import */ var _within__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./within */ "./node_modules/kdbush/src/within.js");
+
+
+
+
+
+const defaultGetX = p => p[0];
+const defaultGetY = p => p[1];
+
+class KDBush {
+    constructor(points, getX = defaultGetX, getY = defaultGetY, nodeSize = 64, ArrayType = Float64Array) {
+        this.nodeSize = nodeSize;
+        this.points = points;
+
+        const IndexArrayType = points.length < 65536 ? Uint16Array : Uint32Array;
+
+        const ids = this.ids = new IndexArrayType(points.length);
+        const coords = this.coords = new ArrayType(points.length * 2);
+
+        for (let i = 0; i < points.length; i++) {
+            ids[i] = i;
+            coords[2 * i] = getX(points[i]);
+            coords[2 * i + 1] = getY(points[i]);
+        }
+
+        (0,_sort__WEBPACK_IMPORTED_MODULE_0__["default"])(ids, coords, nodeSize, 0, ids.length - 1, 0);
+    }
+
+    range(minX, minY, maxX, maxY) {
+        return (0,_range__WEBPACK_IMPORTED_MODULE_1__["default"])(this.ids, this.coords, minX, minY, maxX, maxY, this.nodeSize);
+    }
+
+    within(x, y, r) {
+        return (0,_within__WEBPACK_IMPORTED_MODULE_2__["default"])(this.ids, this.coords, x, y, r, this.nodeSize);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/kdbush/src/range.js":
+/*!******************************************!*\
+  !*** ./node_modules/kdbush/src/range.js ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ range)
+/* harmony export */ });
+
+function range(ids, coords, minX, minY, maxX, maxY, nodeSize) {
+    const stack = [0, ids.length - 1, 0];
+    const result = [];
+    let x, y;
+
+    while (stack.length) {
+        const axis = stack.pop();
+        const right = stack.pop();
+        const left = stack.pop();
+
+        if (right - left <= nodeSize) {
+            for (let i = left; i <= right; i++) {
+                x = coords[2 * i];
+                y = coords[2 * i + 1];
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) result.push(ids[i]);
+            }
+            continue;
+        }
+
+        const m = Math.floor((left + right) / 2);
+
+        x = coords[2 * m];
+        y = coords[2 * m + 1];
+
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) result.push(ids[m]);
+
+        const nextAxis = (axis + 1) % 2;
+
+        if (axis === 0 ? minX <= x : minY <= y) {
+            stack.push(left);
+            stack.push(m - 1);
+            stack.push(nextAxis);
+        }
+        if (axis === 0 ? maxX >= x : maxY >= y) {
+            stack.push(m + 1);
+            stack.push(right);
+            stack.push(nextAxis);
+        }
+    }
+
+    return result;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/kdbush/src/sort.js":
+/*!*****************************************!*\
+  !*** ./node_modules/kdbush/src/sort.js ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ sortKD)
+/* harmony export */ });
+
+function sortKD(ids, coords, nodeSize, left, right, depth) {
+    if (right - left <= nodeSize) return;
+
+    const m = (left + right) >> 1;
+
+    select(ids, coords, m, left, right, depth % 2);
+
+    sortKD(ids, coords, nodeSize, left, m - 1, depth + 1);
+    sortKD(ids, coords, nodeSize, m + 1, right, depth + 1);
+}
+
+function select(ids, coords, k, left, right, inc) {
+
+    while (right > left) {
+        if (right - left > 600) {
+            const n = right - left + 1;
+            const m = k - left + 1;
+            const z = Math.log(n);
+            const s = 0.5 * Math.exp(2 * z / 3);
+            const sd = 0.5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
+            const newLeft = Math.max(left, Math.floor(k - m * s / n + sd));
+            const newRight = Math.min(right, Math.floor(k + (n - m) * s / n + sd));
+            select(ids, coords, k, newLeft, newRight, inc);
+        }
+
+        const t = coords[2 * k + inc];
+        let i = left;
+        let j = right;
+
+        swapItem(ids, coords, left, k);
+        if (coords[2 * right + inc] > t) swapItem(ids, coords, left, right);
+
+        while (i < j) {
+            swapItem(ids, coords, i, j);
+            i++;
+            j--;
+            while (coords[2 * i + inc] < t) i++;
+            while (coords[2 * j + inc] > t) j--;
+        }
+
+        if (coords[2 * left + inc] === t) swapItem(ids, coords, left, j);
+        else {
+            j++;
+            swapItem(ids, coords, j, right);
+        }
+
+        if (j <= k) left = j + 1;
+        if (k <= j) right = j - 1;
+    }
+}
+
+function swapItem(ids, coords, i, j) {
+    swap(ids, i, j);
+    swap(coords, 2 * i, 2 * j);
+    swap(coords, 2 * i + 1, 2 * j + 1);
+}
+
+function swap(arr, i, j) {
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/kdbush/src/within.js":
+/*!*******************************************!*\
+  !*** ./node_modules/kdbush/src/within.js ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ within)
+/* harmony export */ });
+
+function within(ids, coords, qx, qy, r, nodeSize) {
+    const stack = [0, ids.length - 1, 0];
+    const result = [];
+    const r2 = r * r;
+
+    while (stack.length) {
+        const axis = stack.pop();
+        const right = stack.pop();
+        const left = stack.pop();
+
+        if (right - left <= nodeSize) {
+            for (let i = left; i <= right; i++) {
+                if (sqDist(coords[2 * i], coords[2 * i + 1], qx, qy) <= r2) result.push(ids[i]);
+            }
+            continue;
+        }
+
+        const m = Math.floor((left + right) / 2);
+
+        const x = coords[2 * m];
+        const y = coords[2 * m + 1];
+
+        if (sqDist(x, y, qx, qy) <= r2) result.push(ids[m]);
+
+        const nextAxis = (axis + 1) % 2;
+
+        if (axis === 0 ? qx - r <= x : qy - r <= y) {
+            stack.push(left);
+            stack.push(m - 1);
+            stack.push(nextAxis);
+        }
+        if (axis === 0 ? qx + r >= x : qy + r >= y) {
+            stack.push(m + 1);
+            stack.push(right);
+            stack.push(nextAxis);
+        }
+    }
+
+    return result;
+}
+
+function sqDist(ax, ay, bx, by) {
+    const dx = ax - bx;
+    const dy = ay - by;
+    return dx * dx + dy * dy;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/skmeans/dist/node/distance.js":
+/*!****************************************************!*\
+  !*** ./node_modules/skmeans/dist/node/distance.js ***!
+  \****************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = {
+	/**
+  * Euclidean distance
+  */
+	eudist: function eudist(v1, v2, sqrt) {
+		var len = v1.length;
+		var sum = 0;
+
+		for (var i = 0; i < len; i++) {
+			var d = (v1[i] || 0) - (v2[i] || 0);
+			sum += d * d;
+		}
+		// Square root not really needed
+		return sqrt ? Math.sqrt(sum) : sum;
+	},
+	mandist: function mandist(v1, v2, sqrt) {
+		var len = v1.length;
+		var sum = 0;
+
+		for (var i = 0; i < len; i++) {
+			sum += Math.abs((v1[i] || 0) - (v2[i] || 0));
+		}
+
+		// Square root not really needed
+		return sqrt ? Math.sqrt(sum) : sum;
+	},
+
+
+	/**
+  * Unidimensional distance
+  */
+	dist: function dist(v1, v2, sqrt) {
+		var d = Math.abs(v1 - v2);
+		return sqrt ? d : d * d;
+	}
+};
+//# sourceMappingURL=distance.js.map
+
+
+/***/ }),
+
+/***/ "./node_modules/skmeans/dist/node/kinit.js":
+/*!*************************************************!*\
+  !*** ./node_modules/skmeans/dist/node/kinit.js ***!
+  \*************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var Distance = __webpack_require__(/*! ./distance.js */ "./node_modules/skmeans/dist/node/distance.js"),
+    eudist = Distance.eudist,
+    dist = Distance.dist;
+
+module.exports = {
+	kmrand: function kmrand(data, k) {
+		var map = {},
+		    ks = [],
+		    t = k << 2;
+		var len = data.length;
+		var multi = data[0].length > 0;
+
+		while (ks.length < k && t-- > 0) {
+			var d = data[Math.floor(Math.random() * len)];
+			var key = multi ? d.join("_") : "" + d;
+			if (!map[key]) {
+				map[key] = true;
+				ks.push(d);
+			}
+		}
+
+		if (ks.length < k) throw new Error("Error initializating clusters");else return ks;
+	},
+
+
+	/**
+  * K-means++ initial centroid selection
+  */
+	kmpp: function kmpp(data, k) {
+		var distance = data[0].length ? eudist : dist;
+		var ks = [],
+		    len = data.length;
+		var multi = data[0].length > 0;
+		var map = {};
+
+		// First random centroid
+		var c = data[Math.floor(Math.random() * len)];
+		var key = multi ? c.join("_") : "" + c;
+		ks.push(c);
+		map[key] = true;
+
+		// Retrieve next centroids
+		while (ks.length < k) {
+			// Min Distances between current centroids and data points
+			var dists = [],
+			    lk = ks.length;
+			var dsum = 0,
+			    prs = [];
+
+			for (var i = 0; i < len; i++) {
+				var min = Infinity;
+				for (var j = 0; j < lk; j++) {
+					var _dist = distance(data[i], ks[j]);
+					if (_dist <= min) min = _dist;
+				}
+				dists[i] = min;
+			}
+
+			// Sum all min distances
+			for (var _i = 0; _i < len; _i++) {
+				dsum += dists[_i];
+			}
+
+			// Probabilities and cummulative prob (cumsum)
+			for (var _i2 = 0; _i2 < len; _i2++) {
+				prs[_i2] = { i: _i2, v: data[_i2], pr: dists[_i2] / dsum, cs: 0 };
+			}
+
+			// Sort Probabilities
+			prs.sort(function (a, b) {
+				return a.pr - b.pr;
+			});
+
+			// Cummulative Probabilities
+			prs[0].cs = prs[0].pr;
+			for (var _i3 = 1; _i3 < len; _i3++) {
+				prs[_i3].cs = prs[_i3 - 1].cs + prs[_i3].pr;
+			}
+
+			// Randomize
+			var rnd = Math.random();
+
+			// Gets only the items whose cumsum >= rnd
+			var idx = 0;
+			while (idx < len - 1 && prs[idx++].cs < rnd) {}
+			ks.push(prs[idx - 1].v);
+			/*
+   let done = false;
+   while(!done) {
+   	// this is our new centroid
+   	c = prs[idx-1].v
+   	key = multi? c.join("_") : `${c}`;
+   	if(!map[key]) {
+   		map[key] = true;
+   		ks.push(c);
+   		done = true;
+   	}
+   	else {
+   		idx++;
+   	}
+   }
+   */
+		}
+
+		return ks;
+	}
+};
+//# sourceMappingURL=kinit.js.map
+
+
+/***/ }),
+
+/***/ "./node_modules/skmeans/dist/node/main.js":
+/*!************************************************!*\
+  !*** ./node_modules/skmeans/dist/node/main.js ***!
+  \************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+/*jshint esversion: 6 */
+
+var Distance = __webpack_require__(/*! ./distance.js */ "./node_modules/skmeans/dist/node/distance.js"),
+    ClusterInit = __webpack_require__(/*! ./kinit.js */ "./node_modules/skmeans/dist/node/kinit.js"),
+    eudist = Distance.eudist,
+    mandist = Distance.mandist,
+    dist = Distance.dist,
+    kmrand = ClusterInit.kmrand,
+    kmpp = ClusterInit.kmpp;
+
+var MAX = 10000;
+
+/**
+ * Inits an array with values
+ */
+function init(len, val, v) {
+	v = v || [];
+	for (var i = 0; i < len; i++) {
+		v[i] = val;
+	}return v;
+}
+
+function skmeans(data, k, initial, maxit) {
+	var ks = [],
+	    old = [],
+	    idxs = [],
+	    dist = [];
+	var conv = false,
+	    it = maxit || MAX;
+	var len = data.length,
+	    vlen = data[0].length,
+	    multi = vlen > 0;
+	var count = [];
+
+	if (!initial) {
+		var _idxs = {};
+		while (ks.length < k) {
+			var idx = Math.floor(Math.random() * len);
+			if (!_idxs[idx]) {
+				_idxs[idx] = true;
+				ks.push(data[idx]);
+			}
+		}
+	} else if (initial == "kmrand") {
+		ks = kmrand(data, k);
+	} else if (initial == "kmpp") {
+		ks = kmpp(data, k);
+	} else {
+		ks = initial;
+	}
+
+	do {
+		// Reset k count
+		init(k, 0, count);
+
+		// For each value in data, find the nearest centroid
+		for (var i = 0; i < len; i++) {
+			var min = Infinity,
+			    _idx = 0;
+			for (var j = 0; j < k; j++) {
+				// Multidimensional or unidimensional
+				var dist = multi ? eudist(data[i], ks[j]) : Math.abs(data[i] - ks[j]);
+				if (dist <= min) {
+					min = dist;
+					_idx = j;
+				}
+			}
+			idxs[i] = _idx; // Index of the selected centroid for that value
+			count[_idx]++; // Number of values for this centroid
+		}
+
+		// Recalculate centroids
+		var sum = [],
+		    old = [],
+		    dif = 0;
+		for (var _j = 0; _j < k; _j++) {
+			// Multidimensional or unidimensional
+			sum[_j] = multi ? init(vlen, 0, sum[_j]) : 0;
+			old[_j] = ks[_j];
+		}
+
+		// If multidimensional
+		if (multi) {
+			for (var _j2 = 0; _j2 < k; _j2++) {
+				ks[_j2] = [];
+			} // Sum values and count for each centroid
+			for (var _i = 0; _i < len; _i++) {
+				var _idx2 = idxs[_i],
+				    // Centroid for that item
+				vsum = sum[_idx2],
+				    // Sum values for this centroid
+				vect = data[_i]; // Current vector
+
+				// Accumulate value on the centroid for current vector
+				for (var h = 0; h < vlen; h++) {
+					vsum[h] += vect[h];
+				}
+			}
+			// Calculate the average for each centroid
+			conv = true;
+			for (var _j3 = 0; _j3 < k; _j3++) {
+				var ksj = ks[_j3],
+				    // Current centroid
+				sumj = sum[_j3],
+				    // Accumulated centroid values
+				oldj = old[_j3],
+				    // Old centroid value
+				cj = count[_j3]; // Number of elements for this centroid
+
+				// New average
+				for (var _h = 0; _h < vlen; _h++) {
+					ksj[_h] = sumj[_h] / cj || 0; // New centroid
+				}
+
+				// Find if centroids have moved
+				if (conv) {
+					for (var _h2 = 0; _h2 < vlen; _h2++) {
+						if (oldj[_h2] != ksj[_h2]) {
+							conv = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+		// If unidimensional
+		else {
+				// Sum values and count for each centroid
+				for (var _i2 = 0; _i2 < len; _i2++) {
+					var _idx3 = idxs[_i2];
+					sum[_idx3] += data[_i2];
+				}
+				// Calculate the average for each centroid
+				for (var _j4 = 0; _j4 < k; _j4++) {
+					ks[_j4] = sum[_j4] / count[_j4] || 0; // New centroid
+				}
+				// Find if centroids have moved
+				conv = true;
+				for (var _j5 = 0; _j5 < k; _j5++) {
+					if (old[_j5] != ks[_j5]) {
+						conv = false;
+						break;
+					}
+				}
+			}
+
+		conv = conv || --it <= 0;
+	} while (!conv);
+
+	return {
+		it: MAX - it,
+		k: k,
+		idxs: idxs,
+		centroids: ks
+	};
+}
+
+module.exports = skmeans;
+//# sourceMappingURL=main.js.map
+
+
+/***/ }),
+
+/***/ "./node_modules/supercluster/index.js":
+/*!********************************************!*\
+  !*** ./node_modules/supercluster/index.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ Supercluster)
+/* harmony export */ });
+/* harmony import */ var kdbush__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! kdbush */ "./node_modules/kdbush/src/index.js");
+
+
+
+const defaultOptions = {
+    minZoom: 0,   // min zoom to generate clusters on
+    maxZoom: 16,  // max zoom level to cluster the points on
+    minPoints: 2, // minimum points to form a cluster
+    radius: 40,   // cluster radius in pixels
+    extent: 512,  // tile extent (radius is calculated relative to it)
+    nodeSize: 64, // size of the KD-tree leaf node, affects performance
+    log: false,   // whether to log timing info
+
+    // whether to generate numeric ids for input features (in vector tiles)
+    generateId: false,
+
+    // a reduce function for calculating custom cluster properties
+    reduce: null, // (accumulated, props) => { accumulated.sum += props.sum; }
+
+    // properties to use for individual points when running the reducer
+    map: props => props // props => ({sum: props.my_value})
+};
+
+const fround = Math.fround || (tmp => ((x) => { tmp[0] = +x; return tmp[0]; }))(new Float32Array(1));
+
+class Supercluster {
+    constructor(options) {
+        this.options = extend(Object.create(defaultOptions), options);
+        this.trees = new Array(this.options.maxZoom + 1);
+    }
+
+    load(points) {
+        const {log, minZoom, maxZoom, nodeSize} = this.options;
+
+        if (log) console.time('total time');
+
+        const timerId = `prepare ${  points.length  } points`;
+        if (log) console.time(timerId);
+
+        this.points = points;
+
+        // generate a cluster object for each point and index input points into a KD-tree
+        let clusters = [];
+        for (let i = 0; i < points.length; i++) {
+            if (!points[i].geometry) continue;
+            clusters.push(createPointCluster(points[i], i));
+        }
+        this.trees[maxZoom + 1] = new kdbush__WEBPACK_IMPORTED_MODULE_0__["default"](clusters, getX, getY, nodeSize, Float32Array);
+
+        if (log) console.timeEnd(timerId);
+
+        // cluster points on max zoom, then cluster the results on previous zoom, etc.;
+        // results in a cluster hierarchy across zoom levels
+        for (let z = maxZoom; z >= minZoom; z--) {
+            const now = +Date.now();
+
+            // create a new set of clusters for the zoom and index them with a KD-tree
+            clusters = this._cluster(clusters, z);
+            this.trees[z] = new kdbush__WEBPACK_IMPORTED_MODULE_0__["default"](clusters, getX, getY, nodeSize, Float32Array);
+
+            if (log) console.log('z%d: %d clusters in %dms', z, clusters.length, +Date.now() - now);
+        }
+
+        if (log) console.timeEnd('total time');
+
+        return this;
+    }
+
+    getClusters(bbox, zoom) {
+        let minLng = ((bbox[0] + 180) % 360 + 360) % 360 - 180;
+        const minLat = Math.max(-90, Math.min(90, bbox[1]));
+        let maxLng = bbox[2] === 180 ? 180 : ((bbox[2] + 180) % 360 + 360) % 360 - 180;
+        const maxLat = Math.max(-90, Math.min(90, bbox[3]));
+
+        if (bbox[2] - bbox[0] >= 360) {
+            minLng = -180;
+            maxLng = 180;
+        } else if (minLng > maxLng) {
+            const easternHem = this.getClusters([minLng, minLat, 180, maxLat], zoom);
+            const westernHem = this.getClusters([-180, minLat, maxLng, maxLat], zoom);
+            return easternHem.concat(westernHem);
+        }
+
+        const tree = this.trees[this._limitZoom(zoom)];
+        const ids = tree.range(lngX(minLng), latY(maxLat), lngX(maxLng), latY(minLat));
+        const clusters = [];
+        for (const id of ids) {
+            const c = tree.points[id];
+            clusters.push(c.numPoints ? getClusterJSON(c) : this.points[c.index]);
+        }
+        return clusters;
+    }
+
+    getChildren(clusterId) {
+        const originId = this._getOriginId(clusterId);
+        const originZoom = this._getOriginZoom(clusterId);
+        const errorMsg = 'No cluster with the specified id.';
+
+        const index = this.trees[originZoom];
+        if (!index) throw new Error(errorMsg);
+
+        const origin = index.points[originId];
+        if (!origin) throw new Error(errorMsg);
+
+        const r = this.options.radius / (this.options.extent * Math.pow(2, originZoom - 1));
+        const ids = index.within(origin.x, origin.y, r);
+        const children = [];
+        for (const id of ids) {
+            const c = index.points[id];
+            if (c.parentId === clusterId) {
+                children.push(c.numPoints ? getClusterJSON(c) : this.points[c.index]);
+            }
+        }
+
+        if (children.length === 0) throw new Error(errorMsg);
+
+        return children;
+    }
+
+    getLeaves(clusterId, limit, offset) {
+        limit = limit || 10;
+        offset = offset || 0;
+
+        const leaves = [];
+        this._appendLeaves(leaves, clusterId, limit, offset, 0);
+
+        return leaves;
+    }
+
+    getTile(z, x, y) {
+        const tree = this.trees[this._limitZoom(z)];
+        const z2 = Math.pow(2, z);
+        const {extent, radius} = this.options;
+        const p = radius / extent;
+        const top = (y - p) / z2;
+        const bottom = (y + 1 + p) / z2;
+
+        const tile = {
+            features: []
+        };
+
+        this._addTileFeatures(
+            tree.range((x - p) / z2, top, (x + 1 + p) / z2, bottom),
+            tree.points, x, y, z2, tile);
+
+        if (x === 0) {
+            this._addTileFeatures(
+                tree.range(1 - p / z2, top, 1, bottom),
+                tree.points, z2, y, z2, tile);
+        }
+        if (x === z2 - 1) {
+            this._addTileFeatures(
+                tree.range(0, top, p / z2, bottom),
+                tree.points, -1, y, z2, tile);
+        }
+
+        return tile.features.length ? tile : null;
+    }
+
+    getClusterExpansionZoom(clusterId) {
+        let expansionZoom = this._getOriginZoom(clusterId) - 1;
+        while (expansionZoom <= this.options.maxZoom) {
+            const children = this.getChildren(clusterId);
+            expansionZoom++;
+            if (children.length !== 1) break;
+            clusterId = children[0].properties.cluster_id;
+        }
+        return expansionZoom;
+    }
+
+    _appendLeaves(result, clusterId, limit, offset, skipped) {
+        const children = this.getChildren(clusterId);
+
+        for (const child of children) {
+            const props = child.properties;
+
+            if (props && props.cluster) {
+                if (skipped + props.point_count <= offset) {
+                    // skip the whole cluster
+                    skipped += props.point_count;
+                } else {
+                    // enter the cluster
+                    skipped = this._appendLeaves(result, props.cluster_id, limit, offset, skipped);
+                    // exit the cluster
+                }
+            } else if (skipped < offset) {
+                // skip a single point
+                skipped++;
+            } else {
+                // add a single point
+                result.push(child);
+            }
+            if (result.length === limit) break;
+        }
+
+        return skipped;
+    }
+
+    _addTileFeatures(ids, points, x, y, z2, tile) {
+        for (const i of ids) {
+            const c = points[i];
+            const isCluster = c.numPoints;
+
+            let tags, px, py;
+            if (isCluster) {
+                tags = getClusterProperties(c);
+                px = c.x;
+                py = c.y;
+            } else {
+                const p = this.points[c.index];
+                tags = p.properties;
+                px = lngX(p.geometry.coordinates[0]);
+                py = latY(p.geometry.coordinates[1]);
+            }
+
+            const f = {
+                type: 1,
+                geometry: [[
+                    Math.round(this.options.extent * (px * z2 - x)),
+                    Math.round(this.options.extent * (py * z2 - y))
+                ]],
+                tags
+            };
+
+            // assign id
+            let id;
+            if (isCluster) {
+                id = c.id;
+            } else if (this.options.generateId) {
+                // optionally generate id
+                id = c.index;
+            } else if (this.points[c.index].id) {
+                // keep id if already assigned
+                id = this.points[c.index].id;
+            }
+
+            if (id !== undefined) f.id = id;
+
+            tile.features.push(f);
+        }
+    }
+
+    _limitZoom(z) {
+        return Math.max(this.options.minZoom, Math.min(+z, this.options.maxZoom + 1));
+    }
+
+    _cluster(points, zoom) {
+        const clusters = [];
+        const {radius, extent, reduce, minPoints} = this.options;
+        const r = radius / (extent * Math.pow(2, zoom));
+
+        // loop through each point
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            // if we've already visited the point at this zoom level, skip it
+            if (p.zoom <= zoom) continue;
+            p.zoom = zoom;
+
+            // find all nearby points
+            const tree = this.trees[zoom + 1];
+            const neighborIds = tree.within(p.x, p.y, r);
+
+            const numPointsOrigin = p.numPoints || 1;
+            let numPoints = numPointsOrigin;
+
+            // count the number of points in a potential cluster
+            for (const neighborId of neighborIds) {
+                const b = tree.points[neighborId];
+                // filter out neighbors that are already processed
+                if (b.zoom > zoom) numPoints += b.numPoints || 1;
+            }
+
+            // if there were neighbors to merge, and there are enough points to form a cluster
+            if (numPoints > numPointsOrigin && numPoints >= minPoints) {
+                let wx = p.x * numPointsOrigin;
+                let wy = p.y * numPointsOrigin;
+
+                let clusterProperties = reduce && numPointsOrigin > 1 ? this._map(p, true) : null;
+
+                // encode both zoom and point index on which the cluster originated -- offset by total length of features
+                const id = (i << 5) + (zoom + 1) + this.points.length;
+
+                for (const neighborId of neighborIds) {
+                    const b = tree.points[neighborId];
+
+                    if (b.zoom <= zoom) continue;
+                    b.zoom = zoom; // save the zoom (so it doesn't get processed twice)
+
+                    const numPoints2 = b.numPoints || 1;
+                    wx += b.x * numPoints2; // accumulate coordinates for calculating weighted center
+                    wy += b.y * numPoints2;
+
+                    b.parentId = id;
+
+                    if (reduce) {
+                        if (!clusterProperties) clusterProperties = this._map(p, true);
+                        reduce(clusterProperties, this._map(b));
+                    }
+                }
+
+                p.parentId = id;
+                clusters.push(createCluster(wx / numPoints, wy / numPoints, id, numPoints, clusterProperties));
+
+            } else { // left points as unclustered
+                clusters.push(p);
+
+                if (numPoints > 1) {
+                    for (const neighborId of neighborIds) {
+                        const b = tree.points[neighborId];
+                        if (b.zoom <= zoom) continue;
+                        b.zoom = zoom;
+                        clusters.push(b);
+                    }
+                }
+            }
+        }
+
+        return clusters;
+    }
+
+    // get index of the point from which the cluster originated
+    _getOriginId(clusterId) {
+        return (clusterId - this.points.length) >> 5;
+    }
+
+    // get zoom of the point from which the cluster originated
+    _getOriginZoom(clusterId) {
+        return (clusterId - this.points.length) % 32;
+    }
+
+    _map(point, clone) {
+        if (point.numPoints) {
+            return clone ? extend({}, point.properties) : point.properties;
+        }
+        const original = this.points[point.index].properties;
+        const result = this.options.map(original);
+        return clone && result === original ? extend({}, result) : result;
+    }
+}
+
+function createCluster(x, y, id, numPoints, properties) {
+    return {
+        x: fround(x), // weighted cluster center; round for consistency with Float32Array index
+        y: fround(y),
+        zoom: Infinity, // the last zoom the cluster was processed at
+        id, // encodes index of the first child of the cluster and its zoom level
+        parentId: -1, // parent cluster id
+        numPoints,
+        properties
+    };
+}
+
+function createPointCluster(p, id) {
+    const [x, y] = p.geometry.coordinates;
+    return {
+        x: fround(lngX(x)), // projected point coordinates
+        y: fround(latY(y)),
+        zoom: Infinity, // the last zoom the point was processed at
+        index: id, // index of the source feature in the original input array,
+        parentId: -1 // parent cluster id
+    };
+}
+
+function getClusterJSON(cluster) {
+    return {
+        type: 'Feature',
+        id: cluster.id,
+        properties: getClusterProperties(cluster),
+        geometry: {
+            type: 'Point',
+            coordinates: [xLng(cluster.x), yLat(cluster.y)]
+        }
+    };
+}
+
+function getClusterProperties(cluster) {
+    const count = cluster.numPoints;
+    const abbrev =
+        count >= 10000 ? `${Math.round(count / 1000)  }k` :
+        count >= 1000 ? `${Math.round(count / 100) / 10  }k` : count;
+    return extend(extend({}, cluster.properties), {
+        cluster: true,
+        cluster_id: cluster.id,
+        point_count: count,
+        point_count_abbreviated: abbrev
+    });
+}
+
+// longitude/latitude to spherical mercator in [0..1] range
+function lngX(lng) {
+    return lng / 360 + 0.5;
+}
+function latY(lat) {
+    const sin = Math.sin(lat * Math.PI / 180);
+    const y = (0.5 - 0.25 * Math.log((1 + sin) / (1 - sin)) / Math.PI);
+    return y < 0 ? 0 : y > 1 ? 1 : y;
+}
+
+// spherical mercator to longitude/latitude
+function xLng(x) {
+    return (x - 0.5) * 360;
+}
+function yLat(y) {
+    const y2 = (180 - y * 360) * Math.PI / 180;
+    return 360 * Math.atan(Math.exp(y2)) / Math.PI - 90;
+}
+
+function extend(dest, src) {
+    for (const id in src) dest[id] = src[id];
+    return dest;
+}
+
+function getX(p) {
+    return p.x;
+}
+function getY(p) {
+    return p.y;
+}
+
+
+/***/ }),
+
+/***/ "./Resources/Scripts/boxAnim.ts":
+/*!**************************************!*\
+  !*** ./Resources/Scripts/boxAnim.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.initAnim = void 0;
+function initAnim() {
+    const aboutCards = document.querySelectorAll(".card");
+    const cardsText = document.querySelectorAll(".card__number");
+    let lastKnownScrollPosition = 0;
+    let ticking = false;
+    const animLength = 1000;
+    function incrementNumbers(element, step, timeInterval) {
+        let maxNumber = element.getAttribute('data-number');
+        let cardNumber = 0;
+        if (maxNumber) {
+            let interval = setInterval(() => {
+                element.innerText = cardNumber;
+                if (cardNumber >= maxNumber)
+                    clearInterval(interval);
+                cardNumber = cardNumber + step;
+            }, timeInterval);
+        }
+        element.removeAttribute('data-number');
+    }
+    function addClassToCards(scrollPos) {
+        for (let i = 0; i < aboutCards.length; i++) {
+            let card = aboutCards[i];
+            let cardText = cardsText[i];
+            let step = 1;
+            let interval = animLength / 20;
+            if (i == 1) {
+                step = 100;
+                interval = animLength / 10;
+            }
+            else if (i == 2)
+                interval = animLength / 3;
+            if (scrollPos >= card.offsetTop + window.innerHeight / 3) {
+                card.classList.add("card--visible");
+                incrementNumbers(cardText, step, interval);
+            }
+        }
+    }
+    document.addEventListener("scroll", () => {
+        lastKnownScrollPosition = window.scrollY;
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                addClassToCards(lastKnownScrollPosition);
+                ticking;
+            });
+            !ticking;
+        }
+    });
+}
+exports.initAnim = initAnim;
+
+
+/***/ }),
+
+/***/ "./Resources/Scripts/map.ts":
+/*!**********************************!*\
+  !*** ./Resources/Scripts/map.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/// <reference path="../../node_modules/@types/googlemaps/index.d.ts" />
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.initMap = void 0;
+const references_1 = __webpack_require__(/*! ./map/references */ "./Resources/Scripts/map/references.ts");
+const markerclusterer_1 = __webpack_require__(/*! @googlemaps/markerclusterer */ "./node_modules/@googlemaps/markerclusterer/dist/index.esm.js");
+const js_api_loader_1 = __webpack_require__(/*! @googlemaps/js-api-loader */ "./node_modules/@googlemaps/js-api-loader/dist/index.esm.js");
+let map;
+const middleOfCzechia = { lat: 49.74378, lng: 15.33865 };
+let defaultZoomLevel = 8;
+function checkScreenResolution() {
+    if (window.screen.width <= 768) {
+        defaultZoomLevel = 7;
+    }
+    if (window.screen.width <= 425) {
+        defaultZoomLevel = 6;
+    }
+}
+checkScreenResolution();
 const mapOptions = {
     center: middleOfCzechia,
     mapId: "c2aa51b8ca67932f",
@@ -30,28 +3370,23 @@ const mapOptions = {
     minZoom: defaultZoomLevel,
     disableDoubleClickZoom: true,
     zoomControl: false,
-}
-
-const loader = new Loader({
+};
+const loader = new js_api_loader_1.Loader({
     apiKey: "AIzaSyD3Vb9QGa1aKgT_jOOZPax3tx58Z9IqLH8",
     version: "weekly",
 });
-
-export function initMap() {
-
+function initMap() {
     loader.load().then(() => {
-
         const infoWindow = new google.maps.InfoWindow({
             content: '',
             disableAutoPan: true,
-        })
-
+        });
         var europeCoords = [
             new google.maps.LatLng(29.68224948021748, -23.676965750000022),
             new google.maps.LatLng(29.68224948021748, 44.87772174999998),
             new google.maps.LatLng(71.82725578445813, 44.87772174999998),
-            new google.maps.LatLng(71.82725578445813, -23.676965750000022)];
-
+            new google.maps.LatLng(71.82725578445813, -23.676965750000022)
+        ];
         const czechRepublicCoords = [
             new google.maps.LatLng(50.32021682764627, 12.111525535583496),
             new google.maps.LatLng(50.32035383389029, 12.112276554107666),
@@ -6388,13 +9723,11 @@ export function initMap() {
             new google.maps.LatLng(50.3201483243762, 12.111568450927734),
             new google.maps.LatLng(50.32021682764627, 12.111525535583496)
         ];
-
         const svgMarker = {
             url: 'wwwroot/images/icons/marker.png',
-            origin: new google.maps.Point(0,0),
+            origin: new google.maps.Point(0, 0),
             anchor: new google.maps.Point(0, 0)
-          };
-
+        };
         const polygon = new google.maps.Polygon({
             paths: [europeCoords, czechRepublicCoords],
             strokeColor: '#fff',
@@ -6403,37 +9736,6773 @@ export function initMap() {
             fillColor: '#fff',
             fillOpacity: 1
         });
-
-        map = new google.maps.Map(document.getElementById("map") as HTMLElement, mapOptions);
-
-        const markers = references.map((position) => {
+        map = new google.maps.Map(document.getElementById("map"), mapOptions);
+        const markers = references_1.references.map((position) => {
             const label = position.name.charAt(0);
             const marker = new google.maps.Marker({
                 position,
                 label,
                 icon: svgMarker,
                 title: position.name
-            })
-
+            });
             marker.addListener('click', () => {
-                infoWindow.setContent(
-                    `<div class='map__pop-up'><strong>${position.name}</strong><br><span>${position.year}</span><p>${position.desc}</p><b>IČ: ${position.vat}</b></div>`,
-                )
-                infoWindow.open(map, marker)
-            })
-
-            return marker
-        })
-
+                infoWindow.setContent(`<div class='map__pop-up'><strong>${position.name}</strong><br><span>${position.year}</span><p>${position.desc}</p><b>IČ: ${position.vat}</b></div>`);
+                infoWindow.open(map, marker);
+            });
+            return marker;
+        });
         polygon.setMap(map);
-
-        new MarkerClusterer({
+        new markerclusterer_1.MarkerClusterer({
             map,
             markers,
-            algorithm: new GridAlgorithm({
+            algorithm: new markerclusterer_1.GridAlgorithm({
                 gridSize: 60,
-                maxZoom: 17        
+                maxZoom: 17
             })
-        })
+        });
     });
 }
+exports.initMap = initMap;
+
+
+/***/ }),
+
+/***/ "./Resources/Scripts/map/references.ts":
+/*!*********************************************!*\
+  !*** ./Resources/Scripts/map/references.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.references = void 0;
+exports.references = [
+    {
+        "name": "Ašské služby s.r.o.",
+        "lng": 12.18992,
+        "lat": 50.22633,
+        "desc": "Výstavba opěrné stěny a stavební úpravy ve sběrném dvoře v Aši (technologická část)",
+        "year": "2021",
+        "vat": "25222571"
+    },
+    {
+        "name": "BAUSET CZ, a.s.",
+        "lng": 15.77308,
+        "lat": 50.01842,
+        "desc": "Pořízení technologií-BAUSET CZ, a.s.",
+        "year": "2021",
+        "vat": "63217139"
+    },
+    {
+        "name": "Dobrovolný svazek obcí Chomutovsko",
+        "lng": 13.41685,
+        "lat": 50.46086,
+        "desc": "Chomutovsko předchází vzniku jednorázového nádobí-myčky",
+        "year": "2021",
+        "vat": "05054265"
+    },
+    {
+        "name": "EKO servis Zábřeh s.r.o.",
+        "lng": 16.87497,
+        "lat": 49.88661,
+        "desc": "Vozidlo na alternativní pohon-EKO servis Zábřeh s.r.o.",
+        "year": "2021",
+        "vat": "25896903"
+    },
+    {
+        "name": "František Ratzka",
+        "lng": 13.60519,
+        "lat": 50.16232,
+        "desc": "Pořízení zemědělského stroje",
+        "year": "2021",
+        "vat": "47019344"
+    },
+    {
+        "name": "CHMELEX,spol. s r.o.",
+        "lng": 13.60382,
+        "lat": 50.16416,
+        "desc": "Pořízení technologie-CHMELEX,spol. s r.o.",
+        "year": "2021",
+        "vat": "46348565"
+    },
+    {
+        "name": "Jan Hrubý",
+        "lng": 15.74713,
+        "lat": 49.57531,
+        "desc": "Pořízení nakladače",
+        "year": "2021",
+        "vat": "05196973"
+    },
+    {
+        "name": "Kámen Hudčice, s.r.o.",
+        "lng": 13.91817,
+        "lat": 49.52798,
+        "desc": "Výměna strojního vybavení společnosti Kámen Hudčice, s.r.o. (kolové nakladače, vysokozdvižný vozík)",
+        "year": "2021",
+        "vat": "25075799"
+    },
+    {
+        "name": "Kristýna Boubínová",
+        "lng": 13.71016,
+        "lat": 50.03447,
+        "desc": "Mladý začínající zemědělec-Výstavba haly pro stroje",
+        "year": "2021",
+        "vat": "09250531"
+    },
+    {
+        "name": "MERKURIA CL s.r.o.",
+        "lng": 14.40196,
+        "lat": 50.0892,
+        "desc": "Snížení energetické náročnosti budov p.č.5412\/16 a 5412\/19 v k.ú. Česká Lípa-MERKURIA CL s.r.o.",
+        "year": "2021",
+        "vat": "47285389"
+    },
+    {
+        "name": "Město Břeclav",
+        "lng": 16.86991,
+        "lat": 48.74577,
+        "desc": "Vozidla na alternativní pohon-Město Břeclav",
+        "year": "2021",
+        "vat": "00283061"
+    },
+    {
+        "name": "Město Golčův Jeníkov",
+        "lng": 15.46742,
+        "lat": 49.81103,
+        "desc": "Podpora domácího kompostování-Město Golčův Jeníkov",
+        "year": "2021",
+        "vat": "00267406"
+    },
+    {
+        "name": "Město Šenov",
+        "lng": 18.37451,
+        "lat": 49.78494,
+        "desc": "Nákup svozového vozidla pro Město Šenov",
+        "year": "2021",
+        "vat": "00297291"
+    },
+    {
+        "name": "Město Úštěk",
+        "lng": 14.36427,
+        "lat": 50.59282,
+        "desc": "Pořízení elektrovozidla-Město Úštěk",
+        "year": "2021",
+        "vat": "00264571"
+    },
+    {
+        "name": "Město Zásmuky",
+        "lng": 15.02646,
+        "lat": 49.94803,
+        "desc": "Dodávka komunálního vozidla pro město Zásmuky",
+        "year": "2021",
+        "vat": "00235954 "
+    },
+    {
+        "name": "Miroslav Vytásek",
+        "lng": 17.30975,
+        "lat": 49.53724,
+        "desc": "Pořízení technologie-Miroslav Vytásek",
+        "year": "2021",
+        "vat": "42010446"
+    },
+    {
+        "name": "Obec Česká Ves",
+        "lng": 17.22285,
+        "lat": 50.25223,
+        "desc": "Opatření ke snížení energetické náročnosti VO",
+        "year": "2021",
+        "vat": "00636037"
+    },
+    {
+        "name": "Obec Jindřichov",
+        "lng": 17.02235,
+        "lat": 50.11579,
+        "desc": "Rozšíření systému separace odpadů-obec Jindřichov (Zpevněná plocha pro kontejnery)",
+        "year": "2021",
+        "vat": "00301345 "
+    },
+    {
+        "name": "Obec Klenovice na Hané",
+        "lng": 17.21338,
+        "lat": 49.4069,
+        "desc": "Vozidlo na alternativní pohon-obec Klenovice na Hané",
+        "year": "2021",
+        "vat": "00288349"
+    },
+    {
+        "name": "Obec Lukovany",
+        "lng": 16.29121,
+        "lat": 49.1662,
+        "desc": "Rekonstrukce VO Lukovany - EFEKT 2021",
+        "year": "2021",
+        "vat": "00282031 "
+    },
+    {
+        "name": "Obec Nyklovice",
+        "lng": 16.33879,
+        "lat": 49.60484,
+        "desc": "Novostavba přívodního řadu z vrtané studny do vodojemu-Obec Nyklovice",
+        "year": "2021",
+        "vat": "00599646 "
+    },
+    {
+        "name": "Obec Přerov nad Labem",
+        "lng": 14.82734,
+        "lat": 50.16408,
+        "desc": "Rozšíření systému separace odpadů-obec Přerov nad Labem-stavební část",
+        "year": "2021",
+        "vat": "00239682"
+    },
+    {
+        "name": "Obec Řícmanice",
+        "lng": 16.6935,
+        "lat": 49.25961,
+        "desc": "Rozšíření systému separace odpadů-obec Řícmanice (stavební část)",
+        "year": "2021",
+        "vat": "00374903"
+    },
+    {
+        "name": "Obec Sadov",
+        "lng": 12.92106,
+        "lat": 50.26053,
+        "desc": "Rozšíření systému separace odpadů-obec Sadov (stavební úpravy sběrných míst)",
+        "year": "2021",
+        "vat": "00254959 "
+    },
+    {
+        "name": "Obec Svratouch",
+        "lng": 16.05226,
+        "lat": 49.72774,
+        "desc": "Víceúčelové hřiště Svratouch, 330\/6 k.ú. Svratouch",
+        "year": "2021",
+        "vat": "00271004"
+    },
+    {
+        "name": "Obec Zbrašín",
+        "lng": 13.76687,
+        "lat": 50.29559,
+        "desc": "Pořízení DA pro JPO V-obec Zbrašín",
+        "year": "2021",
+        "vat": "00556491 "
+    },
+    {
+        "name": "Obec Žichovice",
+        "lng": 13.63623,
+        "lat": 49.26724,
+        "desc": "Rozšíření systému separace odpadů-obec Žichovice",
+        "year": "2021",
+        "vat": "00256374"
+    },
+    {
+        "name": "Ondřej Čech",
+        "lng": 13.47537,
+        "lat": 50.07885,
+        "desc": "Zemědělská technika",
+        "year": "2021",
+        "vat": "03960901"
+    },
+    {
+        "name": "Pečecké služby, s.r.o.",
+        "lng": 15.03311,
+        "lat": 50.09149,
+        "desc": "Pořízení vozidla na svoz odpadů- Pečecké služby, s.r.o. ",
+        "year": "2021",
+        "vat": "26143551"
+    },
+    {
+        "name": "S M B, příspěvková organizace",
+        "lng": 17.34348,
+        "lat": 49.08577,
+        "desc": "Pořízení komunálního vozidla-S M B, příspěvková organizace",
+        "year": "2021",
+        "vat": "75096323"
+    },
+    {
+        "name": "Svazek obcí mikroregionu Střední Haná",
+        "lng": 17.2451,
+        "lat": 49.32784,
+        "desc": "Rozšíření systému separace odpadů-Svazek obcí mikroregionu Střední Haná",
+        "year": "2021",
+        "vat": "69604771"
+    },
+    {
+        "name": "TBS Světlá nad Sázavou, p.o.",
+        "lng": 15.39303,
+        "lat": 49.67285,
+        "desc": "Vozidlo na alternativní pohon-TBS Světlá nad Sázavou, p.o.",
+        "year": "2021",
+        "vat": "00042234"
+    },
+    {
+        "name": "Technické služby Benešov, s.r.o.",
+        "lng": 14.69297,
+        "lat": 49.78766,
+        "desc": "Podvozek s lineární lisovací nástavbou včetně vyklápěče-Technické služby Benešov, s.r.o.",
+        "year": "2021",
+        "vat": "47543655"
+    },
+    {
+        "name": "Technické služby Bučovice, příspěvková organizace",
+        "lng": 17.00636,
+        "lat": 49.14642,
+        "desc": "Mobilní kompostárna-Technické služby Bučovice, příspěvková organizace",
+        "year": "2021",
+        "vat": "70949824"
+    },
+    {
+        "name": "Technické služby Český Brod",
+        "lng": 14.85366,
+        "lat": 50.07043,
+        "desc": "Pořízení vozidla pro svoz tříděného odpadu, směsného odpadu a bioodpadu-Technické služby Český Brod",
+        "year": "2021",
+        "vat": "00875180"
+    },
+    {
+        "name": "Technické služby města Nymburka",
+        "lng": 15.027,
+        "lat": 50.18354,
+        "desc": "Převzetí a zajištění využití či likvidace odpadu-Technické služby města Nymburka",
+        "year": "2021",
+        "vat": "00067041"
+    },
+    {
+        "name": "Technické služby města Poděbrad s.r.o.,",
+        "lng": 15.11334,
+        "lat": 50.15523,
+        "desc": "Svozové vozidlo-Technické služby města Poděbrad s.r.o.",
+        "year": "2021",
+        "vat": "25798278"
+    },
+    {
+        "name": "Technické služby Strakonice s.r.o.",
+        "lng": 13.91336,
+        "lat": 49.26882,
+        "desc": "Koupě 1 ks vozidla s hydraulickým nakládacím jeřábem",
+        "year": "2021",
+        "vat": "25156888"
+    },
+    {
+        "name": "Technické služby Týnec s.r.o.",
+        "lng": 14.59974,
+        "lat": 49.83412,
+        "desc": "Pořízení zametacího stroje-Technické služby Týnec s.r.o.",
+        "year": "2021",
+        "vat": "02457776"
+    },
+    {
+        "name": "Technické služby Vlašim s.r.o.",
+        "lng": 14.90706,
+        "lat": 49.71197,
+        "desc": "Pořízení svozového vozidla-Technické služby Vlašim s.r.o.",
+        "year": "2021",
+        "vat": "62958283"
+    },
+    {
+        "name": "Technické služby Zábřeh, příspěvková organizace",
+        "lng": 16.87497,
+        "lat": 49.88661,
+        "desc": "Pořízení vozidla na alternativní pohon-Technické služby Zábřeh, příspěvková organizace",
+        "year": "2021",
+        "vat": "06539866"
+    },
+    {
+        "name": "Tomáš Pavlík",
+        "lng": 14.02995,
+        "lat": 50.35385,
+        "desc": "Pořízení speciální zemědělské techniky ",
+        "year": "2021",
+        "vat": "62248481"
+    },
+    {
+        "name": "Václav David",
+        "lng": 13.74975,
+        "lat": 50.31782,
+        "desc": "Investice do zemědělského podniku-pořízení postřikovače",
+        "year": "2021",
+        "vat": "60272627"
+    },
+    {
+        "name": "Vodovody a kanalizace Týnec s.r.o.",
+        "lng": 14.59226,
+        "lat": 49.83307,
+        "desc": "Pořízení nákladního vozidla- nosiče kontejnerů pro Vodovody a kanalizace Týnec s.r.o.",
+        "year": "2021",
+        "vat": "02433044"
+    },
+    {
+        "name": "Zlaté chmelové údolí, s.r.o.",
+        "lng": 13.60382,
+        "lat": 50.16416,
+        "desc": "Technologické vybavení společnosti Zlaté chmelové údolí, s.r.o.",
+        "year": "2021",
+        "vat": "25424980"
+    },
+    {
+        "name": "Agrolesy Chříč, s.r.o.",
+        "lng": 14.42579,
+        "lat": 50.08302,
+        "desc": "Pořízení lesní techniky-Agrolesy Chříč, s.r.o. ",
+        "year": "2020",
+        "vat": "27934829"
+    },
+    {
+        "name": "ALBUS CZ, s.r.o.",
+        "lng": 17.3443,
+        "lat": 49.06411,
+        "desc": "Pořízení technologie-ALBUS CZ, s.r.o.",
+        "year": "2020",
+        "vat": "26933349"
+    },
+    {
+        "name": "ALLMO - PROFIL, společnost s ručením omezeným (zkratka ALLMO - PROFIL spol. s r.o. nebo ALLMO - PROFIL s.r.o.)",
+        "lng": 15.74473,
+        "lat": 50.44432,
+        "desc": "Fotovoltaické systémy - ALLMO-PROFIL",
+        "year": "2020",
+        "vat": "63217911"
+    },
+    {
+        "name": "Bergasto a.s.",
+        "lng": 17.25932,
+        "lat": 49.58263,
+        "desc": "Snížení emisí TZL-Bergasto s.r.o.",
+        "year": "2020",
+        "vat": "28340957"
+    },
+    {
+        "name": "IGRO s.r.o.",
+        "lng": 12.7228,
+        "lat": 49.85843,
+        "desc": "Modernizace zařízení pro třídění a úpravu odpadů-IGRO s.r.o.",
+        "year": "2020",
+        "vat": "64359387"
+    },
+    {
+        "name": "Lersen CZ,s.r.o.",
+        "lng": 14.84718,
+        "lat": 50.86165,
+        "desc": "Technologická inovace ve společnosti Lersen CZ,s.r.o. (robotické svařovací pracoviště)",
+        "year": "2020",
+        "vat": "25480596"
+    },
+    {
+        "name": "Město Bečov nad Teplou",
+        "lng": 12.84393,
+        "lat": 50.09713,
+        "desc": "Rozšíření systému separace odpadů- Město Bečov nad Teplou",
+        "year": "2020",
+        "vat": "00254410"
+    },
+    {
+        "name": "Město Brušperk",
+        "lng": 18.23148,
+        "lat": 49.70466,
+        "desc": "Podpora domácího kompostování-Město Brušperk",
+        "year": "2020",
+        "vat": "00296538"
+    },
+    {
+        "name": "Město Jaroměř",
+        "lng": 15.92907,
+        "lat": 50.36108,
+        "desc": "Pořízení CAS pro jednotku SDH kategorie JPO III\/2 -Město Jaroměř ",
+        "year": "2020",
+        "vat": "00272728 "
+    },
+    {
+        "name": "Město Konice",
+        "lng": 16.90065,
+        "lat": 49.58654,
+        "desc": "Pořízení kompostérů-město Konice",
+        "year": "2020",
+        "vat": "00288365"
+    },
+    {
+        "name": "Město Stochov",
+        "lng": 13.95639,
+        "lat": 50.16254,
+        "desc": "Podpora domácího kompostování-Město Stochov",
+        "year": "2020",
+        "vat": "00234923 "
+    },
+    {
+        "name": "Město Uhlířské Janovice",
+        "lng": 15.05487,
+        "lat": 49.86964,
+        "desc": "Pořízení zametacího stroje-Město Uhlířské Janovice",
+        "year": "2020",
+        "vat": "00236527 "
+    },
+    {
+        "name": "Městys Buchlovice",
+        "lng": 17.33659,
+        "lat": 49.08657,
+        "desc": "Podpora domácího kompostování-Městys Buchlovice",
+        "year": "2020",
+        "vat": "00290866 "
+    },
+    {
+        "name": "Městys Dub nad Moravou",
+        "lng": 17.27842,
+        "lat": 49.48237,
+        "desc": "Podpora domácího kompostování-Městys Dub nad Moravou",
+        "year": "2020",
+        "vat": "00298867"
+    },
+    {
+        "name": "Městys Okříšky",
+        "lng": 15.75804,
+        "lat": 49.24255,
+        "desc": "Podpora domácího kompostování-Městys Okříšky",
+        "year": "2020",
+        "vat": "00290050"
+    },
+    {
+        "name": "Městys Šatov",
+        "lng": 16.0151,
+        "lat": 48.7919,
+        "desc": "Rozšíření systému separace odpadů-Městys Šatov",
+        "year": "2020",
+        "vat": "00293580"
+    },
+    {
+        "name": "Mikroregion Morkovsko",
+        "lng": 17.20525,
+        "lat": 49.24681,
+        "desc": "Podpora domácího kompostování-Mikroregion Morkovsko",
+        "year": "2020",
+        "vat": "70901155"
+    },
+    {
+        "name": "Mikroregion Nepomucko",
+        "lng": 13.58134,
+        "lat": 49.48637,
+        "desc": "Podpora domácího kompostování-Mikroregion Nepomucko",
+        "year": "2020",
+        "vat": "68783922"
+    },
+    {
+        "name": "Mikroregion Odersko",
+        "lng": 17.8307,
+        "lat": 49.66196,
+        "desc": "Kompostuj s Mikroregionem Odersko",
+        "year": "2020",
+        "vat": "70953201"
+    },
+    {
+        "name": "Mikroregion Pobečví",
+        "lng": 17.48175,
+        "lat": 49.49161,
+        "desc": "Podpora domácího kompostování-Mikroregion Pobečví",
+        "year": "2020",
+        "vat": "70966346"
+    },
+    {
+        "name": "Obec Bezměrov",
+        "lng": 17.3415,
+        "lat": 49.32813,
+        "desc": "Podpora domácího kompostování-obec Bezměrov",
+        "year": "2020",
+        "vat": "00287041"
+    },
+    {
+        "name": "Obec Blatno",
+        "lng": 13.36573,
+        "lat": 50.10873,
+        "desc": "Podpora domácího kompostování-obec Blatno",
+        "year": "2020",
+        "vat": "00264768 "
+    },
+    {
+        "name": "Obec Děpoltovice",
+        "lng": 12.82723,
+        "lat": 50.28998,
+        "desc": "Podpora domácího kompostování-obec Děpoltovice",
+        "year": "2020",
+        "vat": "00573221"
+    },
+    {
+        "name": "Obec Dolní Vilémovice",
+        "lng": 15.97955,
+        "lat": 49.15855,
+        "desc": "Podpora domácího kompostování-obec Dolní Vilémovice",
+        "year": "2020",
+        "vat": "00289302"
+    },
+    {
+        "name": "Obec Drahanovice",
+        "lng": 17.05812,
+        "lat": 49.57342,
+        "desc": "Podpora domácího kompostování v obci Drahanovice",
+        "year": "2020",
+        "vat": "00298841"
+    },
+    {
+        "name": "Obec Držovice",
+        "lng": 17.14119,
+        "lat": 49.49587,
+        "desc": "Pořízení vozidla na alternativní pohon-Obec Držovice",
+        "year": "2020",
+        "vat": "75082144"
+    },
+    {
+        "name": "Obec Holedeč",
+        "lng": 13.56146,
+        "lat": 50.27779,
+        "desc": "Rozšíření systému separace odpadů v obci Holedeč",
+        "year": "2020",
+        "vat": "00556297"
+    },
+    {
+        "name": "Obec Horní Domaslavice",
+        "lng": 18.46304,
+        "lat": 49.69329,
+        "desc": "Podpora domácího kompostování-Obec Horní Domaslavice",
+        "year": "2020",
+        "vat": "00536008 "
+    },
+    {
+        "name": "Obec Hulice",
+        "lng": 15.09058,
+        "lat": 49.70918,
+        "desc": "Pořízení DA pro JPO V- obec Hulice",
+        "year": "2020",
+        "vat": "00231801"
+    },
+    {
+        "name": "Obec Jaroslavice",
+        "lng": 16.23603,
+        "lat": 48.75835,
+        "desc": "Podpora domácího kompostování-obec Jaroslavice",
+        "year": "2020",
+        "vat": "00292915"
+    },
+    {
+        "name": "Obec Jimlín",
+        "lng": 13.75656,
+        "lat": 50.32861,
+        "desc": "Rozšíření sběru separovaných odpadů v obci Jimlín",
+        "year": "2020",
+        "vat": "00556327"
+    },
+    {
+        "name": "Obec Krmelín",
+        "lng": 18.23645,
+        "lat": 49.72881,
+        "desc": "Rozšíření systému separovaných odpadů-obec Krmelín",
+        "year": "2020",
+        "vat": "00296848"
+    },
+    {
+        "name": "Obec Kyselka",
+        "lng": 12.98735,
+        "lat": 50.2666,
+        "desc": "Rozšíření systému separace odpadů-Obec Kyselka",
+        "year": "2020",
+        "vat": "00254762"
+    },
+    {
+        "name": "Obec Libčeves",
+        "lng": 13.83889,
+        "lat": 50.45574,
+        "desc": "Rozšíření systému separace odpadů v obci Libčeves",
+        "year": "2020",
+        "vat": "00265110"
+    },
+    {
+        "name": "Obec Litovany",
+        "lng": 16.04573,
+        "lat": 49.05289,
+        "desc": "Podpora domácího kompostování-Obec Litovany",
+        "year": "2020",
+        "vat": "00378119"
+    },
+    {
+        "name": "Obec Merklín",
+        "lng": 13.17881,
+        "lat": 49.56255,
+        "desc": "Podpora domácího kompostování-Obec Merklín",
+        "year": "2020",
+        "vat": "00254789 "
+    },
+    {
+        "name": "Obec Mouchnice",
+        "lng": 17.11061,
+        "lat": 49.10832,
+        "desc": "Podpora domácího kompostování-obec Mouchnice",
+        "year": "2020",
+        "vat": "00373460 "
+    },
+    {
+        "name": "Obec Olomučany",
+        "lng": 16.66886,
+        "lat": 49.32915,
+        "desc": "Rozšíření systému separace odpadů-obec Olomučany",
+        "year": "2020",
+        "vat": "00280763"
+    },
+    {
+        "name": "Obec Otradov",
+        "lng": 16.04646,
+        "lat": 49.7949,
+        "desc": "Podpora domácího kompostování-obec Otradov",
+        "year": "2020",
+        "vat": "64782701"
+    },
+    {
+        "name": "Obec Přemyslovice",
+        "lng": 16.95543,
+        "lat": 49.55354,
+        "desc": "Podpora domácího kompostování-obec Přemyslovice",
+        "year": "2020",
+        "vat": "00288683"
+    },
+    {
+        "name": "Obec Račiněves",
+        "lng": 14.21048,
+        "lat": 50.38108,
+        "desc": "Rozšíření systému separace odpadů v obci Račiněves",
+        "year": "2020",
+        "vat": "00264261"
+    },
+    {
+        "name": "OBEC RAPOTICE",
+        "lng": 16.25878,
+        "lat": 49.19279,
+        "desc": "Podpora domácího kompostování-OBEC RAPOTICE",
+        "year": "2020",
+        "vat": "00290335 "
+    },
+    {
+        "name": "Obec Sebranice",
+        "lng": 16.24687,
+        "lat": 49.77262,
+        "desc": "Pořízení elektromobilu-obec Sebranice",
+        "year": "2020",
+        "vat": "00280917"
+    },
+    {
+        "name": "Obec Střítež nad Ludinou",
+        "lng": 17.7422,
+        "lat": 49.60874,
+        "desc": "Rozšíření separace odpadů v obci Střítež nad Ludinou",
+        "year": "2020",
+        "vat": "00302023"
+    },
+    {
+        "name": "Obec Šenov u Nového Jičína",
+        "lng": 18.00963,
+        "lat": 49.61979,
+        "desc": "Rozšíření systému separovaných odpadů-obec Šenov u Nového Jičína",
+        "year": "2020",
+        "vat": "60798432 "
+    },
+    {
+        "name": "Obec Trboušany",
+        "lng": 16.46382,
+        "lat": 49.04893,
+        "desc": "Podpora domácího kompostování-obec Trboušany",
+        "year": "2020",
+        "vat": "00365726"
+    },
+    {
+        "name": "Obec Valy",
+        "lng": 15.61448,
+        "lat": 50.02704,
+        "desc": "Podpora domácího kompostování-obec Valy",
+        "year": "2020",
+        "vat": "00572781 "
+    },
+    {
+        "name": "Obec Výšovice",
+        "lng": 17.13997,
+        "lat": 49.4163,
+        "desc": "Podpora domácího kompostování-obec Výšovice",
+        "year": "2020",
+        "vat": "00288969"
+    },
+    {
+        "name": "Obec Žihle",
+        "lng": 13.34863,
+        "lat": 50.05315,
+        "desc": "Podpora domácího kompostování-obec Žihle",
+        "year": "2020",
+        "vat": "00258580"
+    },
+    {
+        "name": "Obec Žiželice",
+        "lng": 15.39985,
+        "lat": 50.12388,
+        "desc": "Podpora domácího kompostování-obec Žiželice",
+        "year": "2020",
+        "vat": "00265772 "
+    },
+    {
+        "name": "Sdružení obcí povodí Stonávky",
+        "lng": 18.53473,
+        "lat": 49.70944,
+        "desc": "Podpora domácího kompostování-Sdružení obcí povodí Stonávky",
+        "year": "2020",
+        "vat": "69610088"
+    },
+    {
+        "name": "STAVBY JZL s.r.o.",
+        "lng": 16.6132,
+        "lat": 49.19568,
+        "desc": "Pořízení technologie-STAVBY JZL s.r.o.",
+        "year": "2020",
+        "vat": " 28269985"
+    },
+    {
+        "name": "Svazek obcí Větrník",
+        "lng": 16.96531,
+        "lat": 49.23844,
+        "desc": "Podpora domácího kompostování-Svazek obcí Větrník",
+        "year": "2020",
+        "vat": "70926727"
+    },
+    {
+        "name": "Technické služby Horní Slavkov s.r.o.",
+        "lng": 12.7998,
+        "lat": 50.13155,
+        "desc": "Pořízení svozových vozidel -Technické služby Horní Slavkov s.r.o.",
+        "year": "2020",
+        "vat": "26330202"
+    },
+    {
+        "name": "Technické služby Krnov s.r.o.",
+        "lng": 17.70924,
+        "lat": 50.087,
+        "desc": "Podpora domácího kompostování-Technické služby Krnov s.r.o.",
+        "year": "2020",
+        "vat": "25398547"
+    },
+    {
+        "name": "Technické služby Žacléř, spol. s r.o.",
+        "lng": 15.91116,
+        "lat": 50.66568,
+        "desc": "Vozidlo na alternativní pohon-Technické služby Žacléř, spol. s r.o.",
+        "year": "2020",
+        "vat": "25991558"
+    },
+    {
+        "name": "TEP - AGRO spol. s r.o.",
+        "lng": 13.85365,
+        "lat": 50.71566,
+        "desc": "Pořízení minipivovaru-TEP - AGRO spol. s r.o.",
+        "year": "2020",
+        "vat": "25039385"
+    },
+    {
+        "name": "Vladimír Škvor",
+        "lng": 14.80281,
+        "lat": 49.80709,
+        "desc": "Sdílení zemědělské techniky-Vladimír Škvor",
+        "year": "2020",
+        "vat": "66782929"
+    },
+    {
+        "name": "BIO svoz s.r.o.",
+        "lng": 17.05198,
+        "lat": 49.68707,
+        "desc": "Pořízení svozového vozidla- BIO svoz s.r.o.",
+        "year": "2019",
+        "vat": "07923643"
+    },
+    {
+        "name": "Brembo Czech s.r.o.",
+        "lng": 18.26577,
+        "lat": 49.76822,
+        "desc": "SNIŽOVÁNÍ EMISÍ ZÁPACHU TECHNOLOGIÍ STUDENÉ PLAZMY ve společnosti  Brembo Czech s.r.o. ",
+        "year": "2019",
+        "vat": "28599888"
+    },
+    {
+        "name": "GYPSTREND s.r.o.",
+        "lng": 18.03534,
+        "lat": 49.99938,
+        "desc": "Snížení energetické náročnosti pořízením technologického vybavení-GYPSTREND s.r.o.",
+        "year": "2019",
+        "vat": "60322616"
+    },
+    {
+        "name": "HANES s.r.o.",
+        "lng": 14.28895,
+        "lat": 50.06549,
+        "desc": "SNÍŽENÍ ENERGETICKÉ NÁROČNOSTI OCELOVÉ HALY A ZDĚNÉ BUDOVY NA POZEMCÍCH PARC.Č. 1706 A 1707, KATASTRÁLNÍ ÚZEMÍ VOTICE",
+        "year": "2019",
+        "vat": "26131919 "
+    },
+    {
+        "name": "HECKL s.r.o.",
+        "lng": 14.29174,
+        "lat": 50.23637,
+        "desc": "Výzkum, vývoj a testování prototypů z plastového materiálu",
+        "year": "2019",
+        "vat": "62956833"
+    },
+    {
+        "name": "Ing. Lenka Lišková",
+        "lng": 16.69751,
+        "lat": 49.25929,
+        "desc": "Sociální podnik - hiporehabilitace pro osoby s mentálním a kombinovaným postižením (pořízení dodávky)",
+        "year": "2019",
+        "vat": "60391871"
+    },
+    {
+        "name": "Konstrukce a dopravní stavby s.r.o.",
+        "lng": 15.18153,
+        "lat": 49.81241,
+        "desc": "Modernizace strojního vybavení společnosti Konstrukce a dopravní stavby s.r.o. (provozovna Čáslav)",
+        "year": "2019",
+        "vat": "28447085"
+    },
+    {
+        "name": "MADEX TRADING, s.r.o.",
+        "lng": 14.49369,
+        "lat": 49.98534,
+        "desc": "Kovošrot Petrovice-snížení energetické náročnosti provozovny",
+        "year": "2019",
+        "vat": "25621556"
+    },
+    {
+        "name": "Město Krásná Hora nad Vltavou",
+        "lng": 14.27903,
+        "lat": 49.6012,
+        "desc": "Rozšíření sběrných míst-Město Krásná Hora nad Vltavou (stavební část)",
+        "year": "2019",
+        "vat": "00242535"
+    },
+    {
+        "name": "Obec Bělá nad Svitavou",
+        "lng": 16.48494,
+        "lat": 49.64287,
+        "desc": "Pořízení domácích kompostérů pro obec Bělá nad Svitavou",
+        "year": "2019",
+        "vat": "00579459"
+    },
+    {
+        "name": "Obec Dobříč",
+        "lng": 13.46815,
+        "lat": 49.88375,
+        "desc": "Rozšíření systému separace odpadů-obec Dobříč",
+        "year": "2019",
+        "vat": "00241172"
+    },
+    {
+        "name": "Obec Hořice",
+        "lng": 15.63599,
+        "lat": 50.3714,
+        "desc": "Novostavba objektu – hasičská zbrojnice na p.p.č 91\/2 v k.ú Hořice",
+        "year": "2019",
+        "vat": "00248223"
+    },
+    {
+        "name": "Obec Hostěrádky - Rešov",
+        "lng": 16.77984,
+        "lat": 49.12091,
+        "desc": "Rozšíření systému separovaných odpadů v obci Hostěrádky-Rešov",
+        "year": "2019",
+        "vat": "00372081"
+    },
+    {
+        "name": "Obec Jistebník",
+        "lng": 18.13952,
+        "lat": 49.74879,
+        "desc": "Podpora domácího kompostování-obec Jistebník",
+        "year": "2019",
+        "vat": "00298018"
+    },
+    {
+        "name": "Obec Kondrac",
+        "lng": 14.88804,
+        "lat": 49.67876,
+        "desc": "Pořízení DA pro JPO V-Obec Kondrac",
+        "year": "2019",
+        "vat": "00232009"
+    },
+    {
+        "name": "Obec Košťálov",
+        "lng": 15.41449,
+        "lat": 50.5793,
+        "desc": "Pořízení DA pro jednotku SDH obce Košťálov kategorie JPO III\/1",
+        "year": "2019",
+        "vat": "00275841"
+    },
+    {
+        "name": "Obec Křečovice",
+        "lng": 14.47272,
+        "lat": 49.72732,
+        "desc": "Pořízení DA pro JPO V-Obec Křečovice",
+        "year": "2019",
+        "vat": "00232068"
+    },
+    {
+        "name": "Obec Křížkový Újezdec",
+        "lng": 14.59016,
+        "lat": 49.93737,
+        "desc": "Vyhlášení výběrového řízení na poskytovatele úvěru na dofinancování Stavby ČOV a kanalizačního řádu v obci Křížkový Újezdec",
+        "year": "2019",
+        "vat": "00240397"
+    },
+    {
+        "name": "Obec Kuřimské Jestřabí",
+        "lng": 16.31189,
+        "lat": 49.34506,
+        "desc": "Podpora domácího kompostování-obec Kuřimské Jestřabí",
+        "year": "2019",
+        "vat": "00599531"
+    },
+    {
+        "name": "Obec Mostkovice",
+        "lng": 17.04695,
+        "lat": 49.47613,
+        "desc": "Pořízení elektromobilu-obec Mostkovice",
+        "year": "2019",
+        "vat": "00600032"
+    },
+    {
+        "name": "Obec Ohrozim",
+        "lng": 17.01665,
+        "lat": 49.48713,
+        "desc": "Pořízení elektromobilu-obec Ohrozim",
+        "year": "2019",
+        "vat": "00288543"
+    },
+    {
+        "name": "Obec Poříčany",
+        "lng": 14.92241,
+        "lat": 50.10828,
+        "desc": "Rozšíření systému sběru separovaných odpadů-obec Poříčany",
+        "year": "2019",
+        "vat": "00239666"
+    },
+    {
+        "name": "Obec Říčany",
+        "lng": 16.38078,
+        "lat": 49.21634,
+        "desc": "Pořízení elektromobilu-obec Říčany",
+        "year": "2019",
+        "vat": "00282537 "
+    },
+    {
+        "name": "Obec Strašín",
+        "lng": 13.65903,
+        "lat": 49.17093,
+        "desc": "Rozšíření sběru separovaných odpadů v obci Strašín",
+        "year": "2019",
+        "vat": "00256099"
+    },
+    {
+        "name": "Obec Střílky",
+        "lng": 17.21409,
+        "lat": 49.13975,
+        "desc": "Sběrné místo odpadů Střílky, parc. č. 311\/1, 311\/2 (stavební část)",
+        "year": "2019",
+        "vat": "00287776"
+    },
+    {
+        "name": "Obec Šebetov",
+        "lng": 16.72271,
+        "lat": 49.5547,
+        "desc": "Rozšíření systému separace odpadů-obec Šebetov",
+        "year": "2019",
+        "vat": "00281069"
+    },
+    {
+        "name": "Obec Úlice",
+        "lng": 13.15188,
+        "lat": 49.77183,
+        "desc": "Podpora domácího kompostování-obec Úlice",
+        "year": "2019",
+        "vat": "00258440"
+    },
+    {
+        "name": "Obec Určice",
+        "lng": 17.08664,
+        "lat": 49.4275,
+        "desc": "Novostavba MŠ v areálu ZŠ Určice-technologická část",
+        "year": "2019",
+        "vat": "00288870"
+    },
+    {
+        "name": "Pavel Šilhánek",
+        "lng": 16.57266,
+        "lat": 49.16986,
+        "desc": "Likvidace brownfieldu a výstavba nové budovy-Pavel Šilhánek",
+        "year": "2019",
+        "vat": "10439528"
+    },
+    {
+        "name": "SERVIS VINCENCI s.r.o.",
+        "lng": 15.99167,
+        "lat": 49.83656,
+        "desc": "Fotovoltaická výrobna elektrické energie s akumulací, SERVIS VINCENCI s.r.o.",
+        "year": "2019",
+        "vat": "27560236"
+    },
+    {
+        "name": "SLUMBI spol. s r.o.",
+        "lng": 17.99748,
+        "lat": 49.75965,
+        "desc": "Rozšíření systému separace odpadů-SLUMBI spol. s r.o.",
+        "year": "2019",
+        "vat": "64613771"
+    },
+    {
+        "name": "Správa města Sezimovo Ústí",
+        "lng": 14.68286,
+        "lat": 49.38431,
+        "desc": "Pořízení svozového vozidla na separované odpady-Správa města Sezimovo Ústí",
+        "year": "2019",
+        "vat": "71238522"
+    },
+    {
+        "name": "Střední škola dopravy, obchodu a služeb Moravský Krumlov, příspěvková organizace",
+        "lng": 16.31548,
+        "lat": 49.04876,
+        "desc": "Sada diagnostiky vozidel ",
+        "year": "2019",
+        "vat": "00055166"
+    },
+    {
+        "name": "Svazek obcí Krašov",
+        "lng": 13.05564,
+        "lat": 49.926,
+        "desc": "Podpora domácího kompostování-Svazek obcí Krašov",
+        "year": "2019",
+        "vat": "01051415"
+    },
+    {
+        "name": "Technické služby města Morkovice-Slížany, příspěvková organizace",
+        "lng": 17.21227,
+        "lat": 49.25367,
+        "desc": "Pořízení elektromobilu-Technické služby města Morkovice-Slížany, příspěvková organizace",
+        "year": "2019",
+        "vat": "71294899"
+    },
+    {
+        "name": "Tělovýchovná jednota Sokol Dobříč, z.s.",
+        "lng": 13.47101,
+        "lat": 49.88448,
+        "desc": "Objekt šaten TJ Sokol Dobříč  ",
+        "year": "2019",
+        "vat": "14705087"
+    },
+    {
+        "name": "VESIBA, s.r.o.",
+        "lng": 14.60034,
+        "lat": 50.11176,
+        "desc": "Pořízení silniční frézy s integrovaným nivelačním systémem-VESIBA, s.r.o.",
+        "year": "2019",
+        "vat": "61248711"
+    },
+    {
+        "name": "VRAMAT CZ s.r.o.",
+        "lng": 14.32207,
+        "lat": 50.19071,
+        "desc": "Snížení energetické náročnosti výměnou mobilního zařízení-VRAMAT CZ s.r.o.",
+        "year": "2019",
+        "vat": "29127840"
+    },
+    {
+        "name": "Základní škola Čechtice, okres Benešov, příspěvková organizace",
+        "lng": 15.04552,
+        "lat": 49.62514,
+        "desc": "Šablony pro ZŠ Čechtice CZ.02.3.68\/0.0\/0.0\/18_063\/0013077",
+        "year": "2019",
+        "vat": "70996890"
+    },
+    {
+        "name": "ZKP Kladno, s.r.o.",
+        "lng": 14.08768,
+        "lat": 50.16295,
+        "desc": "Snížení energetické náročnosti pořízením technologie-ZKP Kladno, s.r.o. (areál Tloskov)",
+        "year": "2019",
+        "vat": "47545445"
+    },
+    {
+        "name": "3K značky s.r.o.",
+        "lng": 14.6588,
+        "lat": 49.99288,
+        "desc": "Pořízení vozidla s kontejnery na svoz bioodpadů-3K značky s.r.o.",
+        "year": "2018",
+        "vat": "25056271"
+    },
+    {
+        "name": "EKO - Unimed, s.r.o.",
+        "lng": 17.07751,
+        "lat": 49.79694,
+        "desc": "Rozšíření sběrných míst- EKO - Unimed, s.r.o.",
+        "year": "2018",
+        "vat": "62303431"
+    },
+    {
+        "name": "FREKOMOS, s.r.o.",
+        "lng": 17.98337,
+        "lat": 49.46753,
+        "desc": "Pořízení silniční frézy s 3D nivelačním systémem-FREKOMOS, s.r.o.",
+        "year": "2018",
+        "vat": "61942618"
+    },
+    {
+        "name": "CHPS s.r.o.",
+        "lng": 13.42122,
+        "lat": 50.45634,
+        "desc": "Pořízení technologií ke snížení emisí CHPS s.r.o.",
+        "year": "2018",
+        "vat": "25007149"
+    },
+    {
+        "name": "LB MINERALS, s.r.o.",
+        "lng": 13.37444,
+        "lat": 49.8516,
+        "desc": "Pořízení filtrů pro snížení emisí-LB MINERALS, s.r.o.",
+        "year": "2018",
+        "vat": "27994929"
+    },
+    {
+        "name": "Město Blšany",
+        "lng": 13.47215,
+        "lat": 50.21746,
+        "desc": "Pořízení kompostérů-Město Blšany",
+        "year": "2018",
+        "vat": "00264784"
+    },
+    {
+        "name": "Město Červená Řečice",
+        "lng": 15.18033,
+        "lat": 49.51139,
+        "desc": "Pořízení elektromobilu-Město Červená Řečice",
+        "year": "2018",
+        "vat": "00248045"
+    },
+    {
+        "name": "Město Český Krumlov",
+        "lng": 14.31127,
+        "lat": 48.81581,
+        "desc": "Rozšíření separace složek odpadů-Město Český Krumlov",
+        "year": "2018",
+        "vat": "00245836"
+    },
+    {
+        "name": "Město Jáchymov",
+        "lng": 12.90452,
+        "lat": 50.37246,
+        "desc": "Podpora domácího kompostování-Město Jáchymov",
+        "year": "2018",
+        "vat": "00254622"
+    },
+    {
+        "name": "Město Morkovice-Slížany",
+        "lng": 17.21227,
+        "lat": 49.25367,
+        "desc": "Využití dešťových vod z městských budov-Město Morkovice-Slížany",
+        "year": "2018",
+        "vat": "00287504"
+    },
+    {
+        "name": "Město Vroutek",
+        "lng": 13.34462,
+        "lat": 50.17615,
+        "desc": "Pořízení kompostérů-Město Vroutek",
+        "year": "2018",
+        "vat": "00265705"
+    },
+    {
+        "name": "Městská část Praha 8",
+        "lng": 14.47155,
+        "lat": 50.1097,
+        "desc": "Pořízení zametacích strojů – Městská část Praha 8",
+        "year": "2018",
+        "vat": "00063797"
+    },
+    {
+        "name": "Městská zeleň Znojmo",
+        "lng": 16.07477,
+        "lat": 48.85506,
+        "desc": "Pořízení elektromobilů-Městská zeleň Znojmo",
+        "year": "2018",
+        "vat": "68728255"
+    },
+    {
+        "name": "Městys Jimramov",
+        "lng": 16.22574,
+        "lat": 49.63737,
+        "desc": "Sběrné místo-městys Jimramov (podzemní kontejnery)",
+        "year": "2018",
+        "vat": "00294471"
+    },
+    {
+        "name": "Městys Luka nad Jihlavou",
+        "lng": 15.70577,
+        "lat": 49.37347,
+        "desc": "Rozšíření sběrného dvora-Městys Luka nad Jihlavou",
+        "year": "2018",
+        "vat": "00286192"
+    },
+    {
+        "name": "Mikroregion Porta Bohemica",
+        "lng": 14.07764,
+        "lat": 50.55811,
+        "desc": "Pořízení kompostérů pro Mikroregion Porta Bohemica",
+        "year": "2018",
+        "vat": "70582688"
+    },
+    {
+        "name": "MOP BRNO, spol. s r.o.",
+        "lng": 16.53295,
+        "lat": 49.19733,
+        "desc": "Pořízení komunálního vozidla-MOP BRNO, spol. s r.o.",
+        "year": "2018",
+        "vat": "48910546"
+    },
+    {
+        "name": "Obec Hybrálec",
+        "lng": 15.5476,
+        "lat": 49.44114,
+        "desc": "Pořízení kontejnerů s drtičem-Obec Hybrálec",
+        "year": "2018",
+        "vat": "00543705"
+    },
+    {
+        "name": "Obec Kyselovice",
+        "lng": 17.40198,
+        "lat": 49.37388,
+        "desc": "Podpora domácího kompostování-obec Kyselovice",
+        "year": "2018",
+        "vat": "00287393"
+    },
+    {
+        "name": "Obec Otaslavice",
+        "lng": 17.0607,
+        "lat": 49.38965,
+        "desc": "Výstavba sběrného dvora pro obec Otaslavice-technologická část",
+        "year": "2018",
+        "vat": "00288586"
+    },
+    {
+        "name": "Obec Pernarec",
+        "lng": 13.10011,
+        "lat": 49.85791,
+        "desc": "Podpora domácího kompostování-obec Pernarec",
+        "year": "2018",
+        "vat": "00258229"
+    },
+    {
+        "name": "Obec Petrohrad",
+        "lng": 13.43833,
+        "lat": 50.13799,
+        "desc": "Pořízení kompostérů-Obec Petrohrad",
+        "year": "2018",
+        "vat": "00480975"
+    },
+    {
+        "name": "Obec Plískov",
+        "lng": 13.73458,
+        "lat": 49.84604,
+        "desc": "Podpora domácího kompostování-obec Plískov",
+        "year": "2018",
+        "vat": "00573841"
+    },
+    {
+        "name": "Obec Pojbuky",
+        "lng": 14.89915,
+        "lat": 49.49908,
+        "desc": "Rozšíření sběrných míst-obec Pojbuky",
+        "year": "2018",
+        "vat": "00667081"
+    },
+    {
+        "name": "Obec Soutice",
+        "lng": 15.05104,
+        "lat": 49.73178,
+        "desc": "Pořízení kompostérů a štěpkovače pro obec Soutice",
+        "year": "2018",
+        "vat": "00875813"
+    },
+    {
+        "name": "Obec Šetějovice",
+        "lng": 15.2193,
+        "lat": 49.64825,
+        "desc": "Pořízení DA pro JPO V-obec Šetějovice",
+        "year": "2018",
+        "vat": "00473464"
+    },
+    {
+        "name": "Obec Velká Hleďsebe",
+        "lng": 12.66786,
+        "lat": 49.96063,
+        "desc": "Podpora domácího kompostování-obec Velká Hleďsebe",
+        "year": "2018",
+        "vat": "00572756"
+    },
+    {
+        "name": "Obec Velký Týnec",
+        "lng": 17.32925,
+        "lat": 49.55353,
+        "desc": "Výstavba sběrného dvora obec Velký Týnec-stavební část",
+        "year": "2018",
+        "vat": "00299669"
+    },
+    {
+        "name": "Obec Zlobice",
+        "lng": 17.3101,
+        "lat": 49.29544,
+        "desc": "Pořízení kompostérů a drtiče pro obec Zlobice",
+        "year": "2018",
+        "vat": "00287954"
+    },
+    {
+        "name": "Oldřich Poláček",
+        "lng": 14.26499,
+        "lat": 50.1773,
+        "desc": "Výstavba homogenizační jednotky-Oldřich Poláček (technologická část)",
+        "year": "2018",
+        "vat": "18583636"
+    },
+    {
+        "name": "POZEMNÍ KOMUNIKACE BOHEMIA, a.s.",
+        "lng": 14.12523,
+        "lat": 50.12286,
+        "desc": "Snížení prašnosti v areálu společnosti-POZEMNÍ KOMUNIKACE BOHEMIA, a.s.",
+        "year": "2018",
+        "vat": "27900096"
+    },
+    {
+        "name": "ROSTĚNICE,a.s.",
+        "lng": 16.95787,
+        "lat": 49.24211,
+        "desc": "Pořízení technologického vybavení pro společnost ROSTĚNICE,a.s.",
+        "year": "2018",
+        "vat": "63481821"
+    },
+    {
+        "name": "Správa majetku města Chropyně,příspěvková organizace",
+        "lng": 17.36782,
+        "lat": 49.35692,
+        "desc": "Pořízení kontejnerů a štěpkovače-Správa majetku města Chropyně,příspěvková organizace",
+        "year": "2018",
+        "vat": "47933763"
+    },
+    {
+        "name": "Svazek obcí Pošumaví",
+        "lng": 13.62087,
+        "lat": 49.26652,
+        "desc": "Pořízení domácích kompostérů pro Svazek obcí Pošumaví",
+        "year": "2018",
+        "vat": "68785925"
+    },
+    {
+        "name": "SWONIA, a.s.",
+        "lng": 14.68399,
+        "lat": 48.93436,
+        "desc": "Pořízení minipivovaru-SWONIA, a.s.",
+        "year": "2018",
+        "vat": "24761184 "
+    },
+    {
+        "name": "Technické služby Lanškroun, s.r.o.",
+        "lng": 16.60211,
+        "lat": 49.90873,
+        "desc": "Pořízení svozového vozidla-Technické služby Lanškroun, s.r.o.",
+        "year": "2018",
+        "vat": "25951459"
+    },
+    {
+        "name": "Technické služby města Broumova",
+        "lng": 14.12523,
+        "lat": 50.12286,
+        "desc": "Pořízení lisovací nástavby na svoz BIO a ostatních separovaných odpadů-Technické služby města Broumova",
+        "year": "2018",
+        "vat": "71237321"
+    },
+    {
+        "name": "Technické služby města Kraslic, příspěvková organizace",
+        "lng": 12.52071,
+        "lat": 50.34267,
+        "desc": "Pořízení automatického výrobníku solanky s integrovaným zásobníkem-Technické služby města Kraslic",
+        "year": "2018",
+        "vat": "70897816"
+    },
+    {
+        "name": "Technické služby města Nového Jičína, příspěvková organizace",
+        "lng": 18.02409,
+        "lat": 49.60492,
+        "desc": "Pořízení elektromobilů-Technické služby města Nového Jičína, příspěvková organizace",
+        "year": "2018",
+        "vat": "00417688"
+    },
+    {
+        "name": "ZKJD-TECH s.r.o.",
+        "lng": 17.05198,
+        "lat": 49.68707,
+        "desc": "Pořízení drticí jednotky pro společnost ZKJD-TECH s.r.o.",
+        "year": "2018",
+        "vat": "28637429"
+    },
+    {
+        "name": "ADOS CZ a.s.",
+        "lng": 15.42275,
+        "lat": 50.78233,
+        "desc": "Pořízení stavebních technologií pro společnost ADOS CZ a.s.",
+        "year": "2017",
+        "vat": "25281640"
+    },
+    {
+        "name": "Jiří Vincenci",
+        "lng": 15.9854,
+        "lat": 49.83454,
+        "desc": "Snížení energetické náročnosti budov STK Skuteč",
+        "year": "2017",
+        "vat": "11029803"
+    },
+    {
+        "name": "Město Březová nad Svitavou",
+        "lng": 16.51301,
+        "lat": 49.65861,
+        "desc": "Sběrný dvůr – Město Březová nad Svitavou (stavební část)",
+        "year": "2017",
+        "vat": "00483869"
+    },
+    {
+        "name": "Město Hluk",
+        "lng": 17.52914,
+        "lat": 48.98983,
+        "desc": "Podpora domácího kompostování-Město Hluk",
+        "year": "2017",
+        "vat": "00290939"
+    },
+    {
+        "name": "Město Holešov",
+        "lng": 17.57655,
+        "lat": 49.33994,
+        "desc": "Podpora domácího kompostování-Město Holešov",
+        "year": "2017",
+        "vat": "00287172"
+    },
+    {
+        "name": "Město Vimperk",
+        "lng": 13.76102,
+        "lat": 49.04912,
+        "desc": "Rozšíření systému separace odpadů - město Vimperk",
+        "year": "2017",
+        "vat": "00250805"
+    },
+    {
+        "name": "Město Znojmo",
+        "lng": 16.06332,
+        "lat": 48.86212,
+        "desc": "Rozšíření separace odpadů ve městě Znojmo ",
+        "year": "2017",
+        "vat": "00293881"
+    },
+    {
+        "name": "Město Žandov",
+        "lng": 14.39655,
+        "lat": 50.71409,
+        "desc": "Naši dobrovolní hasiči – zodpovědnost pro budoucnost ve společném domově Evropa",
+        "year": "2017",
+        "vat": "00261131"
+    },
+    {
+        "name": "Městys Protivanov",
+        "lng": 16.83633,
+        "lat": 49.48272,
+        "desc": "Pořízení kompostérů pro městys Protivanov",
+        "year": "2017",
+        "vat": "00288675"
+    },
+    {
+        "name": "Mikroregion Miroslavsko",
+        "lng": 16.31221,
+        "lat": 48.94581,
+        "desc": "Pořízení nádob na separované složky odpadů-mikroregion Miroslavsko ",
+        "year": "2017",
+        "vat": "71182039 "
+    },
+    {
+        "name": "Obec Babice nad Svitavou",
+        "lng": 16.69709,
+        "lat": 49.28509,
+        "desc": "Pořízení malotraktoru pro lesní hospodářství- obec Babice nad Svitavou",
+        "year": "2017",
+        "vat": "00281557"
+    },
+    {
+        "name": "Obec Bedihošť",
+        "lng": 17.15623,
+        "lat": 49.44508,
+        "desc": "Pořízení kompostérů a drtiče bioodpadu pro obec Bedihošť",
+        "year": "2017",
+        "vat": "00288004"
+    },
+    {
+        "name": "Obec Bílá Lhota",
+        "lng": 16.98543,
+        "lat": 49.72073,
+        "desc": "Domácí kompostování-obec Bílá Lhota",
+        "year": "2017",
+        "vat": "00298662"
+    },
+    {
+        "name": "Obec Březina",
+        "lng": 15.04015,
+        "lat": 50.5472,
+        "desc": "Pořízení malotraktoru pro obec Březina",
+        "year": "2017",
+        "vat": "00280020"
+    },
+    {
+        "name": "Obec Čermná nad Orlicí",
+        "lng": 16.15005,
+        "lat": 50.07972,
+        "desc": "Domácí kompostování-obec Čermná nad Orlicí",
+        "year": "2017",
+        "vat": "00274798"
+    },
+    {
+        "name": "Obec Dětkovice",
+        "lng": 17.08847,
+        "lat": 49.41408,
+        "desc": "Domácí kompostování-obec Dětkovice",
+        "year": "2017",
+        "vat": "00600008"
+    },
+    {
+        "name": "Obec Chlebičov",
+        "lng": 17.97734,
+        "lat": 49.96221,
+        "desc": "Svoz bioodpadů v obci Chlebičov",
+        "year": "2017",
+        "vat": "00533947"
+    },
+    {
+        "name": "Obec Jaroměřice",
+        "lng": 16.75437,
+        "lat": 49.62711,
+        "desc": "Rozšíření sběrného dvora pro obec Jaroměřice-stavební část",
+        "year": "2017",
+        "vat": "00276758"
+    },
+    {
+        "name": "Obec Jindřichovice pod Smrkem",
+        "lng": 15.25588,
+        "lat": 50.95739,
+        "desc": "Pořízení DA pro JPO III obec Jindřichovice pod Smrkem",
+        "year": "2017",
+        "vat": "00672025"
+    },
+    {
+        "name": "Obec Kunčina",
+        "lng": 16.63194,
+        "lat": 49.79436,
+        "desc": "Pořízení kompostérů, štěpkovače a kontejneru na textil-obec Kunčina",
+        "year": "2017",
+        "vat": "00276880"
+    },
+    {
+        "name": "Obec Kunice",
+        "lng": 14.67115,
+        "lat": 49.93611,
+        "desc": "Rozšíření svozových míst a pořízení štěpkovače pro obec Kunice",
+        "year": "2017",
+        "vat": "00240401"
+    },
+    {
+        "name": "Obec Liboš",
+        "lng": 17.2162,
+        "lat": 49.70041,
+        "desc": "Pořízení kompostérů a štěpkovače pro obec Liboš",
+        "year": "2017",
+        "vat": "00635758"
+    },
+    {
+        "name": "Obec Loket",
+        "lng": 15.1348,
+        "lat": 49.67025,
+        "desc": "Rozšíření separace a stavební úpravy sběrných míst v obci Loket",
+        "year": "2017",
+        "vat": "00232165"
+    },
+    {
+        "name": "Obec Loukov",
+        "lng": 17.72675,
+        "lat": 49.42027,
+        "desc": "Domácí kompostování-obec Loukov",
+        "year": "2017",
+        "vat": "00287440"
+    },
+    {
+        "name": "Obec Malé Žernoseky",
+        "lng": 14.03879,
+        "lat": 50.53939,
+        "desc": "Pořízení nosiče kontejnerů s rozšířením svozových míst pro obec Malé Žernoseky",
+        "year": "2017",
+        "vat": "00526045"
+    },
+    {
+        "name": "Obec Mašovice",
+        "lng": 15.97802,
+        "lat": 48.86087,
+        "desc": "Pořízení nosiče kontejnerů s kontejnery a drtiče dřevní hmoty-obec Mašovice",
+        "year": "2017",
+        "vat": "00293121"
+    },
+    {
+        "name": "Obec Měrovice nad Hanou",
+        "lng": 17.24987,
+        "lat": 49.35272,
+        "desc": "Pořízení kompostérů a drtiče dřevní hmoty pro obec Měrovice nad Hanou",
+        "year": "2017",
+        "vat": "00636380"
+    },
+    {
+        "name": "Obec Neslovice",
+        "lng": 16.39694,
+        "lat": 49.14395,
+        "desc": "Rozšíření separace odpadů v obci Neslovice",
+        "year": "2017",
+        "vat": "00282197"
+    },
+    {
+        "name": "Obec Radějov",
+        "lng": 17.36208,
+        "lat": 48.84973,
+        "desc": "Domácí kompostování-obec Radějov",
+        "year": "2017",
+        "vat": "00285234"
+    },
+    {
+        "name": "Obec Staré Město",
+        "lng": 16.67431,
+        "lat": 49.79412,
+        "desc": "Pořízení komunálního vozidla s kontejnery-obec Staré Město",
+        "year": "2017",
+        "vat": "00277380"
+    },
+    {
+        "name": "Obec Troubelice",
+        "lng": 17.07634,
+        "lat": 49.81553,
+        "desc": "Pořízení kompostérů se štěpkovačem-obec Troubelice",
+        "year": "2017",
+        "vat": "00299570"
+    },
+    {
+        "name": "Obec Velké Hostěrádky",
+        "lng": 16.8734,
+        "lat": 49.04209,
+        "desc": "Pořízení kompostérů pro obec Velké Hostěrádky",
+        "year": "2017",
+        "vat": "00283681"
+    },
+    {
+        "name": "Obec Veverské Knínice",
+        "lng": 16.40646,
+        "lat": 49.23489,
+        "desc": "Rozšíření separace odpadů v obci Veverské Knínice",
+        "year": "2017",
+        "vat": "00378640"
+    },
+    {
+        "name": "Obec Vranová Lhota",
+        "lng": 16.81745,
+        "lat": 49.70953,
+        "desc": "Pořízení kompostérů a štěpkovače pro obec Vranová Lhota",
+        "year": "2017",
+        "vat": "00277584"
+    },
+    {
+        "name": "Obec Všelibice",
+        "lng": 14.95714,
+        "lat": 50.63237,
+        "desc": "Půdní vestavba hasičské zbrojnice Všelibice",
+        "year": "2017",
+        "vat": "00263303"
+    },
+    {
+        "name": "Služby Kunice spol. s r.o.",
+        "lng": 14.67115,
+        "lat": 49.93611,
+        "desc": "Svoz bioodpadů v obci Kunice",
+        "year": "2017",
+        "vat": "28390750"
+    },
+    {
+        "name": "Služby města Králíky s.r.o.",
+        "lng": 16.76264,
+        "lat": 50.08176,
+        "desc": "Rozšíření separace odpadů ve městě Králíky",
+        "year": "2017",
+        "vat": "26007959"
+    },
+    {
+        "name": "SPETRA CZ s.r.o.",
+        "lng": 18.5278,
+        "lat": 49.71314,
+        "desc": "Zachycení a odsávání plynů z mytí automobilových cisteren",
+        "year": "2017",
+        "vat": "25816811"
+    },
+    {
+        "name": "Technické služby Města Bystré s.r.o.",
+        "lng": 16.3441,
+        "lat": 49.62863,
+        "desc": "Svoz bioodpadů -Technické služby Města Bystré s.r.o.",
+        "year": "2017",
+        "vat": "27483100"
+    },
+    {
+        "name": "Technické služby města Úvaly, příspěvková organizace",
+        "lng": 14.7318,
+        "lat": 50.07223,
+        "desc": "Pořízení biopopelnic pro Technické služby města Úvaly",
+        "year": "2017",
+        "vat": "04441869"
+    },
+    {
+        "name": "Technické služby města Vítkova, příspěvková organizace",
+        "lng": 17.75785,
+        "lat": 49.78024,
+        "desc": "Pořízení kompostérů a kontejneru na textil-Technické služby města Vítkova, příspěvková organizace",
+        "year": "2017",
+        "vat": "00037494"
+    },
+    {
+        "name": "Vladimír Kopřiva",
+        "lng": 17.08443,
+        "lat": 48.96735,
+        "desc": "Vybavení dřevozpracujícího provozu-Vladimír Kopřiva",
+        "year": "2017",
+        "vat": "45123233"
+    },
+    {
+        "name": "Vodovody a kanalizace Havlíčkův Brod, a. s.",
+        "lng": 15.59811,
+        "lat": 49.60646,
+        "desc": "Splašková kanalizace, přečerpávání  na ČOV v k.ú. Stupárovice a Golčův Jeníkov",
+        "year": "2017",
+        "vat": "48173002"
+    },
+    {
+        "name": "EKOLTES Hranice, a.s.",
+        "lng": 17.7508,
+        "lat": 49.55733,
+        "desc": "Pořízení svozového vozidla na komunální odpad EKOLTES Hranice, a.s.",
+        "year": "2016",
+        "vat": "61974919"
+    },
+    {
+        "name": "Ing. Jan Kotrba",
+        "lng": 14.41136,
+        "lat": 50.01304,
+        "desc": "Pořízení technologií pro modernizaci výroby Ing. Jan Kotrba",
+        "year": "2016",
+        "vat": "16080122"
+    },
+    {
+        "name": "Ing. Josef Korhoň",
+        "lng": 17.04304,
+        "lat": 49.47189,
+        "desc": "Vybavení kompostárny Ing. Josef Korhoň-kolový nakladač",
+        "year": "2016",
+        "vat": "18513255"
+    },
+    {
+        "name": "Město Proseč",
+        "lng": 16.09839,
+        "lat": 49.79269,
+        "desc": "Pořízení požárního vozidla pro město Proseč",
+        "year": "2016",
+        "vat": "00270741"
+    },
+    {
+        "name": "Město Šumperk",
+        "lng": 16.95894,
+        "lat": 49.9795,
+        "desc": "Pořízení pozaďové monitorovací stanice pro město Šumperk",
+        "year": "2016",
+        "vat": "00303461"
+    },
+    {
+        "name": "Město Velké Pavlovice",
+        "lng": 16.83694,
+        "lat": 48.9015,
+        "desc": "Pořízení velkokapacitní CAS Město Velké Pavlovice",
+        "year": "2016",
+        "vat": "00283703"
+    },
+    {
+        "name": "Městys Doubravice nad Svitavou",
+        "lng": 16.62977,
+        "lat": 49.43616,
+        "desc": "Pořízení kompostérů pro městys Doubravice nad Svitavou",
+        "year": "2016",
+        "vat": "00280143"
+    },
+    {
+        "name": "Obec Herálec",
+        "lng": 15.97861,
+        "lat": 49.6823,
+        "desc": "Svoz bioodpadu v obci Obec Herálec",
+        "year": "2016",
+        "vat": "00267457"
+    },
+    {
+        "name": "Obec Kobylí",
+        "lng": 16.90216,
+        "lat": 48.94409,
+        "desc": "Pořízení hasičského vozidla pro obec Kobylí",
+        "year": "2016",
+        "vat": "00283266"
+    },
+    {
+        "name": "Obec Rudíkov",
+        "lng": 15.93529,
+        "lat": 49.28859,
+        "desc": "Pořízení CAS pro JPO III obec Rudíkov",
+        "year": "2016",
+        "vat": "00290386"
+    },
+    {
+        "name": "Obec Věž",
+        "lng": 15.44886,
+        "lat": 49.57076,
+        "desc": "Technická infrastruktura pro výstavbu rodinných domů Obec Věž",
+        "year": "2016",
+        "vat": "00268453"
+    },
+    {
+        "name": "Petr Očenášek",
+        "lng": 17.24053,
+        "lat": 49.59011,
+        "desc": "Náhrada technologie za účelem snížení emisí TZL Petr Očenášek",
+        "year": "2016",
+        "vat": "42062730"
+    },
+    {
+        "name": "Radek Matoušek",
+        "lng": 14.34917,
+        "lat": 50.46252,
+        "desc": "Vybudování kompostárny Radek Matoušek",
+        "year": "2016",
+        "vat": "42116210"
+    },
+    {
+        "name": "Skládka pod Haldou s.r.o.",
+        "lng": 16.06649,
+        "lat": 50.51644,
+        "desc": "Vybavení kompostárny Skládka pod Haldou s.r.o.",
+        "year": "2016",
+        "vat": "25295080"
+    },
+    {
+        "name": "Šárka Matušíková",
+        "lng": 14.34917,
+        "lat": 50.46252,
+        "desc": "Vybudování kompostárny Šárka Matušíková",
+        "year": "2016",
+        "vat": "66656486"
+    },
+    {
+        "name": "Tomáš Krpálek",
+        "lng": 15.50271,
+        "lat": 49.51503,
+        "desc": "Kompostárna Tomáš Krpálek",
+        "year": "2016",
+        "vat": "03624366"
+    },
+    {
+        "name": "Ecocycle s.r.o.",
+        "lng": 14.42499,
+        "lat": 49.62618,
+        "desc": "Linka na zpracování plastového odpadu",
+        "year": "2015",
+        "vat": "03491099"
+    },
+    {
+        "name": "Jan Krpálek",
+        "lng": 15.50271,
+        "lat": 49.51503,
+        "desc": "Svoz a separace BRO Jan Krpálek",
+        "year": "2015",
+        "vat": "74290169"
+    },
+    {
+        "name": "Josef Mázdra",
+        "lng": 13.94683,
+        "lat": 49.55808,
+        "desc": "Svoz a separace BRO v obci Březnice a okolí",
+        "year": "2015",
+        "vat": "61101532"
+    },
+    {
+        "name": "KENVI CZ s.r.o.",
+        "lng": 16.28899,
+        "lat": 50.12239,
+        "desc": "Separace a systém svozu bioodpadů KENVI CZ s.r.o. ",
+        "year": "2015",
+        "vat": "28825039"
+    },
+    {
+        "name": "Král & Král s.r.o.",
+        "lng": 14.58462,
+        "lat": 49.93169,
+        "desc": "Svoz bioodpadu Král & Král s.r.o.",
+        "year": "2015",
+        "vat": "25072358"
+    },
+    {
+        "name": "Loštická lesní s.r.o.",
+        "lng": 16.92724,
+        "lat": 49.74484,
+        "desc": "Svozové vozidlo a kontejnery",
+        "year": "2015",
+        "vat": "26831783"
+    },
+    {
+        "name": "Město Kraslice",
+        "lng": 12.52071,
+        "lat": 50.34267,
+        "desc": "Dětská hřiště a zahrady v přírodním stylu ve městě Kraslice",
+        "year": "2015",
+        "vat": "00259438"
+    },
+    {
+        "name": "Město Lomnice nad Lužnicí",
+        "lng": 14.71915,
+        "lat": 49.08317,
+        "desc": "Svoz bioodpadů ve městě Lomnice nad Lužnicí",
+        "year": "2015",
+        "vat": "00247022"
+    },
+    {
+        "name": "Město Rotava",
+        "lng": 12.5547,
+        "lat": 50.30324,
+        "desc": "Svoz biologicky rozložitelného odpadu pro město Rotava",
+        "year": "2015",
+        "vat": "00259551"
+    },
+    {
+        "name": "Městská část Praha-Lysolaje",
+        "lng": 14.37371,
+        "lat": 50.12524,
+        "desc": "Systém svozu bioodpadů v městské části Praha-Lysolaje",
+        "year": "2015",
+        "vat": "00231207"
+    },
+    {
+        "name": "Městské služby Vimperk, s.r.o.",
+        "lng": 13.78494,
+        "lat": 49.05701,
+        "desc": "Systém svozu a separace bioodpadu Městské služby Vimperk, s.r.o. ",
+        "year": "2015",
+        "vat": "26015391"
+    },
+    {
+        "name": "Městys Bobrová",
+        "lng": 16.11515,
+        "lat": 49.47899,
+        "desc": "Svoz BRO a vybavení kompostárny-městys Bobrová",
+        "year": "2015",
+        "vat": "00293971"
+    },
+    {
+        "name": "Městys Křižanov",
+        "lng": 16.11062,
+        "lat": 49.38848,
+        "desc": "Svoz biologicky rozložitelných odpadů v městyse Křižanov",
+        "year": "2015",
+        "vat": "00294616"
+    },
+    {
+        "name": "Městys Vrchotovy Janovice",
+        "lng": 14.57777,
+        "lat": 49.66864,
+        "desc": "Svoz bioodpadu- Městys Vrchotovy Janovice",
+        "year": "2015",
+        "vat": "00233005"
+    },
+    {
+        "name": "Obec Bílá",
+        "lng": 15.03927,
+        "lat": 50.66378,
+        "desc": "Svoz bioodpadu v obci Bílá",
+        "year": "2015",
+        "vat": "00262668"
+    },
+    {
+        "name": "Obec Dambořice",
+        "lng": 16.92248,
+        "lat": 49.04175,
+        "desc": "Snížení prašnosti na území obce Dambořice",
+        "year": "2015",
+        "vat": "00284840"
+    },
+    {
+        "name": "Obec Damnice",
+        "lng": 16.36487,
+        "lat": 48.91564,
+        "desc": "Svoz a a separace biologicky rozložitelných odpadů v obci Damnice",
+        "year": "2015",
+        "vat": "00600270"
+    },
+    {
+        "name": "Obec Habrovany",
+        "lng": 16.87875,
+        "lat": 49.22806,
+        "desc": "Vybavení kompostárny pro obec Habrovany",
+        "year": "2015",
+        "vat": "00291757"
+    },
+    {
+        "name": "Obec Hrádek",
+        "lng": 16.26876,
+        "lat": 48.77609,
+        "desc": "Separace a svoz BRO v obci Hrádek",
+        "year": "2015",
+        "vat": "00292869"
+    },
+    {
+        "name": "Obec Kostelní Myslová",
+        "lng": 15.4285,
+        "lat": 49.14795,
+        "desc": "Svoz bioodpadu v obci Kostelní Myslová",
+        "year": "2015",
+        "vat": "00286141"
+    },
+    {
+        "name": "Obec Lipovec",
+        "lng": 16.80598,
+        "lat": 49.38386,
+        "desc": "Separace a svoz BRO v obci Lipovec",
+        "year": "2015",
+        "vat": "00280551"
+    },
+    {
+        "name": "Obec Mokrá - Horákov",
+        "lng": 16.74194,
+        "lat": 49.22134,
+        "desc": "Systém separace a svozu bioodpadu v obci Mokrá-Horákov",
+        "year": "2015",
+        "vat": "00282111"
+    },
+    {
+        "name": "Obec Niva",
+        "lng": 17.63934,
+        "lat": 48.97699,
+        "desc": "Pořízení kompostérů a štěpkovače v rámci likvidace BRO v obci Niva",
+        "year": "2015",
+        "vat": "00288519"
+    },
+    {
+        "name": "Obec Radostice",
+        "lng": 16.47749,
+        "lat": 49.13769,
+        "desc": "Likvidace bioodpadů v obci Radostice",
+        "year": "2015",
+        "vat": "00487520"
+    },
+    {
+        "name": "Obec Ruda nad Moravou",
+        "lng": 16.89376,
+        "lat": 50.00583,
+        "desc": "Zavedení sběru bioodpadů v Rudě nad Moravou ",
+        "year": "2015",
+        "vat": "00303313"
+    },
+    {
+        "name": "Obec Senožaty",
+        "lng": 15.21468,
+        "lat": 49.56947,
+        "desc": "Separace a svoz bioodpadů v obci Senožaty ",
+        "year": "2015",
+        "vat": "00249050"
+    },
+    {
+        "name": "Obec Slatiny",
+        "lng": 15.38311,
+        "lat": 50.37139,
+        "desc": "Svoz bioodpadu v obci Slatiny",
+        "year": "2015",
+        "vat": "00272094"
+    },
+    {
+        "name": "Obec Suchohrdly u Miroslavi",
+        "lng": 16.37604,
+        "lat": 48.94971,
+        "desc": "Separace a svoz bioodpadů v obci Suchohrdly u Miroslavi",
+        "year": "2015",
+        "vat": "00637599"
+    },
+    {
+        "name": "Obec Velké Přílepy",
+        "lng": 14.31527,
+        "lat": 50.16124,
+        "desc": "Snížení imisní zátěže na území obce Velké Přílepy",
+        "year": "2015",
+        "vat": "00241806"
+    },
+    {
+        "name": "REPROGEN, a.s.",
+        "lng": 14.70867,
+        "lat": 49.35797,
+        "desc": "Separace a svoz BRO-společnost REPROGEN, a.s.",
+        "year": "2015",
+        "vat": "46678450 "
+    },
+    {
+        "name": "Svozová s.r.o.",
+        "lng": 17.12006,
+        "lat": 49.76289,
+        "desc": "Svoz a separace BRO – Svozová s.r.o.",
+        "year": "2015",
+        "vat": "03886476"
+    },
+    {
+        "name": "T E S Český Dub, s.r.o.",
+        "lng": 14.98004,
+        "lat": 50.65892,
+        "desc": "Systém separace a svozu BRO ve městě Český Dub",
+        "year": "2015",
+        "vat": "62741209"
+    },
+    {
+        "name": "TECHNICKÁ A LESNÍ SPRÁVA CHOTĚBOŘ s.r.o.",
+        "lng": 15.68642,
+        "lat": 49.71227,
+        "desc": "Zefektivnění svozu bioodpadu ve městě Chotěboř",
+        "year": "2015",
+        "vat": "25999729"
+    },
+    {
+        "name": "Technické služby Lipník nad Bečvou, příspěvková organizace",
+        "lng": 17.58284,
+        "lat": 49.52872,
+        "desc": "Pořízení vozidla na svoz komunálního odpadu pro Technické služby Lipník nad Bečvou, příspěvková organizace",
+        "year": "2015",
+        "vat": "00097811"
+    },
+    {
+        "name": "TRADUCI COMPANY s.r.o.",
+        "lng": 18.25045,
+        "lat": 49.82715,
+        "desc": "Svoz a separace BRO TRADUCI COMPANY s.r.o",
+        "year": "2015",
+        "vat": "03606333"
+    },
+    {
+        "name": "TS Ledeč nad Sázavou, s.r.o.",
+        "lng": 15.27318,
+        "lat": 49.7002,
+        "desc": "Provoz sběrného dvora v Ledči nad Sázavou, ul. Pivovarská, na období od 1. 1. 2016 do 31. 12. 2016",
+        "year": "2015",
+        "vat": "25281208"
+    },
+    {
+        "name": "Údržba silnic Karlovarského kraje, a.s.",
+        "lng": 12.87203,
+        "lat": 50.25068,
+        "desc": "Dodávka asfaltové emulze",
+        "year": "2015",
+        "vat": "26402068"
+    },
+    {
+        "name": "WASTE TRADE, s.r.o.",
+        "lng": 14.43868,
+        "lat": 50.09206,
+        "desc": "Svoz papíru ALBA WASTE – sběrné nádoby",
+        "year": "2015",
+        "vat": "24701777"
+    },
+    {
+        "name": "A3 PLAST s.r.o.",
+        "lng": 16.23368,
+        "lat": 50.13452,
+        "desc": "Zařízení na zefektivnění odpadu",
+        "year": "2014",
+        "vat": "2364751"
+    },
+    {
+        "name": "ARBOR MORAVIA s.r.o.",
+        "lng": 18.37317,
+        "lat": 49.82651,
+        "desc": "Nákup technologie za účelem snížení prašnosti",
+        "year": "2014",
+        "vat": "25383035"
+    },
+    {
+        "name": "ARIETE automotive s.r.o.",
+        "lng": 14.90193,
+        "lat": 50.41165,
+        "desc": "Snížení prašnosti v Mladé Boleslavi",
+        "year": "2014",
+        "vat": "24845108"
+    },
+    {
+        "name": "AUTO HELUS s.r.o.",
+        "lng": 13.38283,
+        "lat": 49.75298,
+        "desc": "Pořízení čistícího stroje pro AUTO HELUS s.r.o.",
+        "year": "2014",
+        "vat": "48361437"
+    },
+    {
+        "name": "AXA truck a.s.",
+        "lng": 18.27007,
+        "lat": 49.85985,
+        "desc": "Pravidelná údržba areálu společnosti",
+        "year": "2014",
+        "vat": "27780309"
+    },
+    {
+        "name": "Beskydské rehabilitační centrum, spol. s r.o.",
+        "lng": 18.30527,
+        "lat": 49.53956,
+        "desc": "Snížení prašnosti v areálu Beskydského rehabilitačního centra",
+        "year": "2014",
+        "vat": "25868951"
+    },
+    {
+        "name": "BETON - Těšovice, spol. s r.o.",
+        "lng": 14.0255,
+        "lat": 49.04948,
+        "desc": "Snížení imisní zátěže v BETON-Těšovice",
+        "year": "2014",
+        "vat": "41878451"
+    },
+    {
+        "name": "Brickyard a.s.",
+        "lng": 18.27007,
+        "lat": 49.85985,
+        "desc": "Pravidelná údržba komunikací společnosti Brickyard a.s.",
+        "year": "2014",
+        "vat": "28650018"
+    },
+    {
+        "name": "ČEMAT, s.r.o.",
+        "lng": 18.34048,
+        "lat": 49.90693,
+        "desc": "Pravidelná údržba areálových komunikací",
+        "year": "2014",
+        "vat": "60776480"
+    },
+    {
+        "name": "Čistá MORAVA s.r.o.",
+        "lng": 17.03685,
+        "lat": 49.69581,
+        "desc": "ČISTÁ MORAVA",
+        "year": "2014",
+        "vat": "02844290"
+    },
+    {
+        "name": "Družstvo ZAGRA",
+        "lng": 18.04593,
+        "lat": 49.8319,
+        "desc": "Čisté komunikace",
+        "year": "2014",
+        "vat": "64609880"
+    },
+    {
+        "name": "EKOSTAVBY Louny s.r.o.",
+        "lng": 13.81924,
+        "lat": 50.34517,
+        "desc": "Pořízení zametacího stroje",
+        "year": "2014",
+        "vat": "10442481"
+    },
+    {
+        "name": "FIORINI INTERNATIONAL Czech Republic, s.r.o.",
+        "lng": 14.50804,
+        "lat": 50.09918,
+        "desc": "Snížení prašnosti v areálu FIORINI ve Vysočanech",
+        "year": "2014",
+        "vat": "26195810"
+    },
+    {
+        "name": "FRAMA CZ s.r.o.",
+        "lng": 18.27591,
+        "lat": 49.80218,
+        "desc": "Pravidelná údržba areálových komunikací",
+        "year": "2014",
+        "vat": "26842556"
+    },
+    {
+        "name": "Jiří Zápotocký",
+        "lng": 13.28355,
+        "lat": 50.26207,
+        "desc": "KOMPOSTÁRNA MAŠŤOV",
+        "year": "2014",
+        "vat": "46789448"
+    },
+    {
+        "name": "JUREX VOS s.r.o.",
+        "lng": 14.16618,
+        "lat": 49.31275,
+        "desc": "Nákup zametacího stroje za účelem snížení prašnosti",
+        "year": "2014",
+        "vat": "12895679"
+    },
+    {
+        "name": "Kaiser servis, s.r.o.",
+        "lng": 16.64492,
+        "lat": 49.36829,
+        "desc": "Zkvalitnění služeb společnosti Kaiser servis, spol. s r. o.",
+        "year": "2014",
+        "vat": "26274906"
+    },
+    {
+        "name": "KARE, Praha, s.r.o.",
+        "lng": 14.40084,
+        "lat": 50.01496,
+        "desc": "Snížení prašnosti v areálu KARE, Praha",
+        "year": "2014",
+        "vat": "26166879"
+    },
+    {
+        "name": "KILDATRANS-CZ, spol. s r.o.",
+        "lng": 16.54131,
+        "lat": 49.17414,
+        "desc": "Pořízení zametacího stroje",
+        "year": "2014",
+        "vat": "27699242"
+    },
+    {
+        "name": "Kompostárna Nasobůrky s.r.o.",
+        "lng": 17.07565,
+        "lat": 49.70102,
+        "desc": "KOMPOSTÁRNA NASOBŮRKY",
+        "year": "2014",
+        "vat": "02313308"
+    },
+    {
+        "name": "KOMPOSTÁRNA NOR s.r.o.",
+        "lng": 16.23368,
+        "lat": 50.13452,
+        "desc": "Kompostárna odpadu",
+        "year": "2014",
+        "vat": "02364565"
+    },
+    {
+        "name": "Komunální služby, s.r.o.,Jablonné nad Orlicí",
+        "lng": 16.59276,
+        "lat": 50.0214,
+        "desc": "Další rozšíření nakládání s odpady",
+        "year": "2014",
+        "vat": "60935863"
+    },
+    {
+        "name": "Komwag, podnik čistoty a údržby města ,a.s.",
+        "lng": 14.50669,
+        "lat": 50.02704,
+        "desc": "Systém odděleného sběru - Mníšecký region",
+        "year": "2014",
+        "vat": "61057606"
+    },
+    {
+        "name": "KR OSTRAVA a.s.",
+        "lng": 18.32223,
+        "lat": 49.82609,
+        "desc": "Čistý firemní areál KR OSTRAVA a.s.",
+        "year": "2014",
+        "vat": "25890981"
+    },
+    {
+        "name": "Lesostavby Frýdek-Místek a. s.",
+        "lng": 18.38089,
+        "lat": 49.67649,
+        "desc": "Pravidelná údržba areálu společnosti",
+        "year": "2014",
+        "vat": "45193118"
+    },
+    {
+        "name": "LORAS, spol.s r.o.",
+        "lng": 17.0961,
+        "lat": 49.3075,
+        "desc": "Nákup technologie za účelem pravidelné údržby - LORAS, spol. s r. o.",
+        "year": "2014",
+        "vat": "29291135"
+    },
+    {
+        "name": "Martin Kolek s.r.o.",
+        "lng": 18.50216,
+        "lat": 49.89796,
+        "desc": "Úklid areálu Martin Kolek s.r.o.",
+        "year": "2014",
+        "vat": "26825554"
+    },
+    {
+        "name": "Město Janské Lázně",
+        "lng": 15.76881,
+        "lat": 50.64648,
+        "desc": "Pro Janské lázně vzduch čistý krásně",
+        "year": "2014",
+        "vat": "00277967"
+    },
+    {
+        "name": "Město Klimkovice",
+        "lng": 18.12298,
+        "lat": 49.78841,
+        "desc": "Pořízení samosběrného vozu pro Město Klimkovice",
+        "year": "2014",
+        "vat": "00298051"
+    },
+    {
+        "name": "Město Mnichovice",
+        "lng": 14.72149,
+        "lat": 49.93881,
+        "desc": "Zkvalitnění nakládání s odpady v Mnichovicích",
+        "year": "2014",
+        "vat": "00240478"
+    },
+    {
+        "name": "Městská část Praha - Řeporyje",
+        "lng": 14.3114,
+        "lat": 50.03208,
+        "desc": "Snížení prašnosti na území MČ Praha-Řeporyje",
+        "year": "2014",
+        "vat": "00241628"
+    },
+    {
+        "name": "Městys Rataje nad Sázavou",
+        "lng": 14.95778,
+        "lat": 49.84224,
+        "desc": "Pořízení zametacího stroje",
+        "year": "2014",
+        "vat": "00236381"
+    },
+    {
+        "name": "Městys Senomaty",
+        "lng": 13.65451,
+        "lat": 50.09807,
+        "desc": "Nákup zametacího stroje pro Senomaty",
+        "year": "2014",
+        "vat": "00244384"
+    },
+    {
+        "name": "MPL KAUF spol. s r.o.",
+        "lng": 18.24361,
+        "lat": 49.83441,
+        "desc": "Snížení prašnosti v areálu MPL KAUF",
+        "year": "2014",
+        "vat": "64615944"
+    },
+    {
+        "name": "NORPLAST s.r.o.",
+        "lng": 16.23368,
+        "lat": 50.13452,
+        "desc": "Zefektivnění třídění odpadu",
+        "year": "2014",
+        "vat": "02351617"
+    },
+    {
+        "name": "Obec Bělá pod Pradědem",
+        "lng": 17.19584,
+        "lat": 50.16333,
+        "desc": "Čistá Bělá",
+        "year": "2014",
+        "vat": "00302333"
+    },
+    {
+        "name": "Obec Brzánky",
+        "lng": 14.31048,
+        "lat": 50.46617,
+        "desc": "Snížení imisní zátěže v obci Brzánky",
+        "year": "2014",
+        "vat": "00832138"
+    },
+    {
+        "name": "Obec Březník",
+        "lng": 16.19,
+        "lat": 49.17018,
+        "desc": "Obec Březník - snížení prašnosti",
+        "year": "2014",
+        "vat": "00289132"
+    },
+    {
+        "name": "Obec Cetkovice",
+        "lng": 16.72379,
+        "lat": 49.58061,
+        "desc": "Pravidelnou údržbou obce k čistšímu ovzduší",
+        "year": "2014",
+        "vat": "00280071"
+    },
+    {
+        "name": "Obec Hejná",
+        "lng": 13.67292,
+        "lat": 49.28619,
+        "desc": "Snížení imisní zátěže v obci Hejná",
+        "year": "2014",
+        "vat": "00573485"
+    },
+    {
+        "name": "Obec Hněvkovice",
+        "lng": 15.20746,
+        "lat": 49.69029,
+        "desc": "Uklizené ulice v obci Hněvkovice",
+        "year": "2014",
+        "vat": "00267473"
+    },
+    {
+        "name": "Obec Horní Heřmanice",
+        "lng": 16.7054,
+        "lat": 49.96054,
+        "desc": "Čistá hlavní silnice v obci Horní Heřmanice",
+        "year": "2014",
+        "vat": "00278904"
+    },
+    {
+        "name": "Obec Hostěradice",
+        "lng": 16.26075,
+        "lat": 48.95797,
+        "desc": "Čistá obec Hostěradice",
+        "year": "2014",
+        "vat": "00292834"
+    },
+    {
+        "name": "Obec Hrobčice",
+        "lng": 13.81753,
+        "lat": 50.52278,
+        "desc": "Čisté a uklizené ulice v Hrobčicích",
+        "year": "2014",
+        "vat": "00266345"
+    },
+    {
+        "name": "Obec Kameničky",
+        "lng": 15.97681,
+        "lat": 49.73901,
+        "desc": "Čisto na silnicích v obci Kameničky",
+        "year": "2014",
+        "vat": "00270245"
+    },
+    {
+        "name": "Obec Kamýk nad Vltavou",
+        "lng": 14.24865,
+        "lat": 49.65276,
+        "desc": "Prach způsobený dopravou zameteme v Kamýku nad Vltavou",
+        "year": "2014",
+        "vat": "00242411"
+    },
+    {
+        "name": "Obec Krásný Dvůr",
+        "lng": 13.35408,
+        "lat": 50.25865,
+        "desc": "Pořízení zametacího stroje pro obec Krásný Dvůr",
+        "year": "2014",
+        "vat": "00265071"
+    },
+    {
+        "name": "Obec Křešice",
+        "lng": 14.21331,
+        "lat": 50.52386,
+        "desc": "Čisté a uklizené ulice v Křešicích",
+        "year": "2014",
+        "vat": "00263851"
+    },
+    {
+        "name": "Obec Lety",
+        "lng": 14.08583,
+        "lat": 49.51793,
+        "desc": "Čisté silnice v obci Lety",
+        "year": "2014",
+        "vat": "00249823"
+    },
+    {
+        "name": "Obec Loděnice",
+        "lng": 14.16385,
+        "lat": 49.99531,
+        "desc": "Obec Loděnice - Nákup techniky pro čistší silnice",
+        "year": "2014",
+        "vat": "00233510"
+    },
+    {
+        "name": "Obec Lužná",
+        "lng": 13.78171,
+        "lat": 50.13529,
+        "desc": "Vybavení zařízení pro shromažďování odpadů v obci Lužná",
+        "year": "2014",
+        "vat": "00244031"
+    },
+    {
+        "name": "Obec Onšov",
+        "lng": 15.13885,
+        "lat": 49.58277,
+        "desc": "Snížení prašnosti v obci Onšov",
+        "year": "2014",
+        "vat": "00511609"
+    },
+    {
+        "name": "Obec Perštejn",
+        "lng": 13.08106,
+        "lat": 50.39063,
+        "desc": "Snížení prašnosti v obci Perštejn",
+        "year": "2014",
+        "vat": "00262072"
+    },
+    {
+        "name": "Obec Přestavlky",
+        "lng": 17.47873,
+        "lat": 49.39465,
+        "desc": "Pravidelná údržba obce",
+        "year": "2014",
+        "vat": "00636495"
+    },
+    {
+        "name": "Obec Roštění",
+        "lng": 17.54289,
+        "lat": 49.3702,
+        "desc": "Pravidelná údržba obce Roštění",
+        "year": "2014",
+        "vat": "00287687"
+    },
+    {
+        "name": "Obec Smilovy Hory",
+        "lng": 14.89976,
+        "lat": 49.53495,
+        "desc": "Čistší Smilovy Hory",
+        "year": "2014",
+        "vat": "00252913"
+    },
+    {
+        "name": "Obec Stachy",
+        "lng": 13.63914,
+        "lat": 49.09846,
+        "desc": "Čisté Stachy",
+        "year": "2014",
+        "vat": "00250678"
+    },
+    {
+        "name": "OBEC SULICE",
+        "lng": 14.55639,
+        "lat": 49.92733,
+        "desc": "Nákup zametacího stroje pro obec Sulice",
+        "year": "2014",
+        "vat": "00240818"
+    },
+    {
+        "name": "Obec Tuchoměřice",
+        "lng": 14.28283,
+        "lat": 50.13277,
+        "desc": "Obec Tuchoměřice – snížení prašnosti",
+        "year": "2014",
+        "vat": "00241750"
+    },
+    {
+        "name": "Obec Vilémov",
+        "lng": 15.53779,
+        "lat": 49.81176,
+        "desc": "K čistšímu ovzduší v obci Vilémov",
+        "year": "2014",
+        "vat": "00635316"
+    },
+    {
+        "name": "Obec Zalužany",
+        "lng": 14.09476,
+        "lat": 49.54388,
+        "desc": "Čisté a uklizené ulice v Zalužanech",
+        "year": "2014",
+        "vat": "00243604"
+    },
+    {
+        "name": "Pavel Švestka, s.r.o.",
+        "lng": 14.21716,
+        "lat": 50.01877,
+        "desc": "Čistý firemní areál Pavel Švestka",
+        "year": "2014",
+        "vat": "49827171"
+    },
+    {
+        "name": "Poláček Farma Hole s.r.o.",
+        "lng": 14.26499,
+        "lat": 14.26499,
+        "desc": "Nákup zametacího stroje",
+        "year": "2014",
+        "vat": "27152383"
+    },
+    {
+        "name": "Race Control s.r.o.",
+        "lng": 14.48871,
+        "lat": 50.10756,
+        "desc": "Snížení imisní zátěže",
+        "year": "2014",
+        "vat": "24200476"
+    },
+    {
+        "name": "S A P spol. s r.o.",
+        "lng": 15.11927,
+        "lat": 49.65747,
+        "desc": "Snížení prašnosti z plošných zdrojů",
+        "year": "2014",
+        "vat": "47543442"
+    },
+    {
+        "name": "SÁRA Viktor s.r.o.",
+        "lng": 18.27437,
+        "lat": 49.65872,
+        "desc": "Pravidelnou údržbou k čistšímu ovzduší",
+        "year": "2014",
+        "vat": "28643151"
+    },
+    {
+        "name": "Schwarzmüller s.r.o.",
+        "lng": 13.8892,
+        "lat": 49.8617,
+        "desc": "Nákup zametacího stroje za účelem snížení prašnosti",
+        "year": "2014",
+        "vat": "46885820"
+    },
+    {
+        "name": "Služby ŠVARC s.r.o.",
+        "lng": 17.63101,
+        "lat": 49.56957,
+        "desc": "Nákup čistící techniky",
+        "year": "2014",
+        "vat": "28577744"
+    },
+    {
+        "name": "STAEG Facility, spol. s r.o.",
+        "lng": 17.00613,
+        "lat": 49.29485,
+        "desc": "Nákup technologie za účelem pravidelné údržby - STAEG Facility, spol. s r.o.",
+        "year": "2014",
+        "vat": "24141623"
+    },
+    {
+        "name": "STASPO, spol. s r.o.",
+        "lng": 18.33037,
+        "lat": 49.8198,
+        "desc": "Snížení emisní zátěže",
+        "year": "2014",
+        "vat": "41035704"
+    },
+    {
+        "name": "Stavitelství SIZO s.r.o.",
+        "lng": 18.20561,
+        "lat": 49.81372,
+        "desc": "Úklid areálu v Ostravě-Michálkovicích",
+        "year": "2014",
+        "vat": "26840359"
+    },
+    {
+        "name": "STAVORENOL s.r.o.",
+        "lng": 18.61763,
+        "lat": 49.74609,
+        "desc": "Pravidelnou údržbou k čistšímu ovzduší",
+        "year": "2014",
+        "vat": "25895524"
+    },
+    {
+        "name": "TEBYT AŠ, s.r.o.",
+        "lng": 12.18807,
+        "lat": 50.2221,
+        "desc": "Zkvalitnění nakládání s odpady ve městě Aš",
+        "year": "2014",
+        "vat": "25217208"
+    },
+    {
+        "name": "Technické služby Doubravčice s.r.o.",
+        "lng": 14.79141,
+        "lat": 50.02287,
+        "desc": "Snížení prašnosti z plošných zdrojů",
+        "year": "2014",
+        "vat": "02870991"
+    },
+    {
+        "name": "Technické služby města Jaroměře",
+        "lng": 15.92907,
+        "lat": 50.36108,
+        "desc": "Snížení prašnosti z plošných zdrojů",
+        "year": "2014",
+        "vat": "70154449"
+    },
+    {
+        "name": "Technické služby Třeboň, s.r.o.",
+        "lng": 14.75719,
+        "lat": 49.01716,
+        "desc": "Zameteme pro zdraví ve městě Třeboni",
+        "year": "2014",
+        "vat": "62502735"
+    },
+    {
+        "name": "Transbeton Bohemia, s.r.o.",
+        "lng": 15.20242,
+        "lat": 50.02689,
+        "desc": "Snížení prašnosti v areálu Transbeton",
+        "year": "2014",
+        "vat": "27083403"
+    },
+    {
+        "name": "Trávníkářství s.r.o.",
+        "lng": 13.46768,
+        "lat": 50.21524,
+        "desc": "Nákup zametacího stroje za účelem snížení prašnosti",
+        "year": "2014",
+        "vat": "02920964"
+    },
+    {
+        "name": "VÍTKOVICE ARÉNA, a.s.",
+        "lng": 18.2484,
+        "lat": 49.80494,
+        "desc": "Čisto okolo arény ve Vítkovicích",
+        "year": "2014",
+        "vat": "25911368"
+    },
+    {
+        "name": "ADW Agro, a.s.",
+        "lng": 15.80819,
+        "lat": 49.21583,
+        "desc": "Čisté ovzduší ve firmě ADW AGRO, a.s.",
+        "year": "2013",
+        "vat": "28348982"
+    },
+    {
+        "name": "AVE Ústí nad Labem s.r.o.",
+        "lng": 14.06717,
+        "lat": 50.66773,
+        "desc": "Čištění ulic za lepším ovzduším",
+        "year": "2013",
+        "vat": "61329002"
+    },
+    {
+        "name": "Bramac střešní systémy, s.r.o.",
+        "lng": 14.50563,
+        "lat": 50.11123,
+        "desc": "Snížení prašnosti v areálu společnosti BRAMAC v Chrudimi",
+        "year": "2013",
+        "vat": "15052346"
+    },
+    {
+        "name": "ČNES dopravní stavby, a.s.",
+        "lng": 14.12523,
+        "lat": 50.12286,
+        "desc": "Redukce prašnosti v okrese Rakovník",
+        "year": "2013",
+        "vat": "47781734"
+    },
+    {
+        "name": "Diton, s.r.o.",
+        "lng": 15.63189,
+        "lat": 49.45769,
+        "desc": "Snížení prašnosti v areálu Čeperka společnosti DITON",
+        "year": "2013",
+        "vat": "25557921"
+    },
+    {
+        "name": "DOKAS Dobříš, s.r.o.",
+        "lng": 14.16392,
+        "lat": 49.77837,
+        "desc": "Snížení imisní zátěže ve městě Dobříš",
+        "year": "2013",
+        "vat": "25144251"
+    },
+    {
+        "name": "Dolní Povltaví",
+        "lng": 14.52312,
+        "lat": 50.05517,
+        "desc": "Pořízení zametacího stroje za účelem redukce prašnosti",
+        "year": "2013",
+        "vat": "71225951"
+    },
+    {
+        "name": "HONDL GLOBAL SERVICES, a.s.",
+        "lng": 14.11821,
+        "lat": 50.14803,
+        "desc": "Společnost Hondl Global Services snižuje prašné imise zametením silnic",
+        "year": "2013",
+        "vat": "28967968"
+    },
+    {
+        "name": "INVENTA, spol. s r.o.",
+        "lng": 15.78033,
+        "lat": 50.02127,
+        "desc": "Snížení prašnosti v areálu Inventa, spol.s.r.o.v Pardubicích",
+        "year": "2013",
+        "vat": "15050386"
+    },
+    {
+        "name": "JIPOCAR Služby, s.r.o.",
+        "lng": 14.43613,
+        "lat": 50.05045,
+        "desc": "Redukce prašnosti v areálu společnosti JIPOCAR Služby, s.r.o.",
+        "year": "2013",
+        "vat": "24763284"
+    },
+    {
+        "name": "Laremo, s.r.o.",
+        "lng": 13.38037,
+        "lat": 49.75311,
+        "desc": "Laremo s.r.o. snižuje prašnost v obchodních areálech",
+        "year": "2013",
+        "vat": "29077532"
+    },
+    {
+        "name": "Lasso CV, s.r.o.",
+        "lng": 13.42419,
+        "lat": 50.45989,
+        "desc": "LASSO CV snižuje prašnost průmyslových areálů v Chomutově",
+        "year": "2013",
+        "vat": "49903926"
+    },
+    {
+        "name": "MČ Praha - Libuš",
+        "lng": 14.46246,
+        "lat": 50.0093,
+        "desc": "Pořízením zametacího vozu k čistému vzduchu v Libuši",
+        "year": "2013",
+        "vat": "00231142"
+    },
+    {
+        "name": "MČ Praha - Lochkov",
+        "lng": 14.35325,
+        "lat": 50.00171,
+        "desc": "Čištění městské části strojní technologií",
+        "year": "2013",
+        "vat": "00241458"
+    },
+    {
+        "name": "MČ Praha - Nebušice",
+        "lng": 14.32589,
+        "lat": 50.11106,
+        "desc": "Snížení imisní zátěže - MČ Nebušice",
+        "year": "2013",
+        "vat": "00231215"
+    },
+    {
+        "name": "MČ Praha - Slivenec",
+        "lng": 14.3543,
+        "lat": 50.01923,
+        "desc": "Pro lepší ovzduší v Praze - Slivenci",
+        "year": "2013",
+        "vat": "00241661"
+    },
+    {
+        "name": "Město Bohušovice nad Ohří",
+        "lng": 14.15018,
+        "lat": 50.48984,
+        "desc": "Strojní čištění města",
+        "year": "2013",
+        "vat": "00263362"
+    },
+    {
+        "name": "Město Březová",
+        "lng": 12.64671,
+        "lat": 50.14691,
+        "desc": "Město Březová snižuje prašnost v ulicích",
+        "year": "2013",
+        "vat": "00259250"
+    },
+    {
+        "name": "Město Budyně nad Ohří",
+        "lng": 14.1202,
+        "lat": 50.41133,
+        "desc": "Pořízení stroje za účelem snížení prašnosti",
+        "year": "2013",
+        "vat": "00263427"
+    },
+    {
+        "name": "Město Horní Jiřetín",
+        "lng": 13.5377,
+        "lat": 50.56749,
+        "desc": "Město Horní Jiřetín snižuje prašnost v ulicích",
+        "year": "2013",
+        "vat": "00265942"
+    },
+    {
+        "name": "Město Hranice",
+        "lng": 12.17536,
+        "lat": 50.30609,
+        "desc": "Čisté ulice ve městě Hranice",
+        "year": "2013",
+        "vat": "00253961"
+    },
+    {
+        "name": "Město Chabařovice",
+        "lng": 13.93919,
+        "lat": 50.66799,
+        "desc": "Snížení prašnosti ve městě Chabařovice",
+        "year": "2013",
+        "vat": "00556912"
+    },
+    {
+        "name": "Město Ivanovice na Hané",
+        "lng": 17.10348,
+        "lat": 49.31639,
+        "desc": "Zdravé město Ivanovice na Hané",
+        "year": "2013",
+        "vat": "00291846"
+    },
+    {
+        "name": "Město Klecany",
+        "lng": 14.41849,
+        "lat": 50.18626,
+        "desc": "Čistý vzduch v Klecanech",
+        "year": "2013",
+        "vat": "00240290"
+    },
+    {
+        "name": "Město Libochovice",
+        "lng": 14.04233,
+        "lat": 50.40913,
+        "desc": "Uklizené ulice ve městě Libochovice",
+        "year": "2013",
+        "vat": "00263931"
+    },
+    {
+        "name": "Město Loštice",
+        "lng": 16.92724,
+        "lat": 49.74484,
+        "desc": "Zdravý vzduch v Lošticích",
+        "year": "2013",
+        "vat": "00302945"
+    },
+    {
+        "name": "Město Paskov",
+        "lng": 18.2842,
+        "lat": 49.7309,
+        "desc": "Čisté komunikace ve městě Paskov",
+        "year": "2013",
+        "vat": "00297062"
+    },
+    {
+        "name": "Město Plasy",
+        "lng": 13.38389,
+        "lat": 49.93539,
+        "desc": "Snížení prašnosti ve městě Plasy",
+        "year": "2013",
+        "vat": "00258245"
+    },
+    {
+        "name": "Město Přibyslav",
+        "lng": 15.73807,
+        "lat": 49.57725,
+        "desc": "Snížení prašnosti z plošných zdrojů",
+        "year": "2013",
+        "vat": "00268097"
+    },
+    {
+        "name": "Město Raspenava",
+        "lng": 15.13674,
+        "lat": 50.90001,
+        "desc": "Pořízení zametacího stroje pro město Raspenava",
+        "year": "2013",
+        "vat": "00263141"
+    },
+    {
+        "name": "Město Slatiňany",
+        "lng": 15.80544,
+        "lat": 49.90662,
+        "desc": "Pořízením zametacího vozu k čistšímu ovzduší ve Slatiňanech",
+        "year": "2013",
+        "vat": "00270920"
+    },
+    {
+        "name": "Město Staňkov",
+        "lng": 13.08603,
+        "lat": 49.55873,
+        "desc": "Snížení imisní zátěže ve městě Staňkov",
+        "year": "2013",
+        "vat": "00253766"
+    },
+    {
+        "name": "Město Štramberk",
+        "lng": 18.11352,
+        "lat": 49.5869,
+        "desc": "Čistší Štramberk",
+        "year": "2013",
+        "vat": "00298468"
+    },
+    {
+        "name": "Město Trmice",
+        "lng": 13.99303,
+        "lat": 50.6378,
+        "desc": "Čisté ovzduší ve městě Trmice",
+        "year": "2013",
+        "vat": "00674010"
+    },
+    {
+        "name": "Město Valtice",
+        "lng": 16.75579,
+        "lat": 48.74302,
+        "desc": "Snížení prašnosti z plošných zdrojů v obci Valtice",
+        "year": "2013",
+        "vat": "00283665"
+    },
+    {
+        "name": "Město Zákupy",
+        "lng": 14.64148,
+        "lat": 50.67755,
+        "desc": "Snížení prašnosti v ulicích města Zákupy",
+        "year": "2013",
+        "vat": "00261114"
+    },
+    {
+        "name": "Město Židlochovice",
+        "lng": 16.62742,
+        "lat": 49.03637,
+        "desc": "Čistší město Židlochovice",
+        "year": "2013",
+        "vat": "00282979"
+    },
+    {
+        "name": "Městská Část Praha - Štěrboholy",
+        "lng": 14.54959,
+        "lat": 50.07141,
+        "desc": "Zameteme ve Štěrboholech po prášících automobilech",
+        "year": "2013",
+        "vat": "00231371"
+    },
+    {
+        "name": "MĚSTSKÁ ČÁST PRAHA 16",
+        "lng": 14.36197,
+        "lat": 49.98205,
+        "desc": "Zametený Radotín, vyčištěný od zplodin",
+        "year": "2013",
+        "vat": "00241598"
+    },
+    {
+        "name": "Městská část Praha 19",
+        "lng": 14.54722,
+        "lat": 50.13371,
+        "desc": "Nákup zameztacího stroje pro Městskou část Praha 19",
+        "year": "2013",
+        "vat": "00231304"
+    },
+    {
+        "name": "Moravské kovárny, a.s.",
+        "lng": 15.60861,
+        "lat": 49.41199,
+        "desc": "Snížení prašnosti z plošných zdrojů",
+        "year": "2013",
+        "vat": "46346694"
+    },
+    {
+        "name": "Nehlsen Třinec s.r.o.",
+        "lng": 18.67204,
+        "lat": 49.67854,
+        "desc": "Redukce prašnosti mobilní technikou",
+        "year": "2013",
+        "vat": "25355996"
+    },
+    {
+        "name": "obec Bitozeves",
+        "lng": 13.62267,
+        "lat": 50.38139,
+        "desc": "Čištění komunikací v průmyslové zóně Triangle",
+        "year": "2013",
+        "vat": "00556238"
+    },
+    {
+        "name": "Obec Březno",
+        "lng": 15.01935,
+        "lat": 50.40462,
+        "desc": "Úklid a čištění komunikací",
+        "year": "2013",
+        "vat": "00261823"
+    },
+    {
+        "name": "Obec Čestlice",
+        "lng": 14.58618,
+        "lat": 50.00246,
+        "desc": "Čisté ovzduší v obci Čestlice",
+        "year": "2013",
+        "vat": "00240125"
+    },
+    {
+        "name": "obec Horní Maršov",
+        "lng": 15.82374,
+        "lat": 50.68497,
+        "desc": "Snížení prašnosti v Horním Maršově",
+        "year": "2013",
+        "vat": "00277878"
+    },
+    {
+        "name": "Obec Horní Němčí",
+        "lng": 17.62337,
+        "lat": 48.93482,
+        "desc": "Pravidelnou údržbou komunikací v obci Horní Němčí k čistšímu",
+        "year": "2013",
+        "vat": "00290947"
+    },
+    {
+        "name": "Obec Horní Podluží",
+        "lng": 14.55258,
+        "lat": 50.88541,
+        "desc": "Pořízení zametacího stroje pro obec Horní Podluží",
+        "year": "2013",
+        "vat": "00524221"
+    },
+    {
+        "name": "Obec Chvalovice",
+        "lng": 16.06728,
+        "lat": 48.77953,
+        "desc": "Koupě multifunkčního traktoru s příslušenstvím",
+        "year": "2013",
+        "vat": "00600407"
+    },
+    {
+        "name": "Obec Jesenice",
+        "lng": 14.51682,
+        "lat": 49.96693,
+        "desc": "Pořízení zametacího stroje pro obec Jesenice",
+        "year": "2013",
+        "vat": "00241318"
+    },
+    {
+        "name": "Obec Jirny",
+        "lng": 14.69947,
+        "lat": 50.11531,
+        "desc": "Snížení imisní zátěže v obci Jirny",
+        "year": "2013",
+        "vat": "00240257"
+    },
+    {
+        "name": "Obec Keblov",
+        "lng": 15.07988,
+        "lat": 49.67872,
+        "desc": "Snížení prašnosti v obci Keblov",
+        "year": "2013",
+        "vat": "00231975"
+    },
+    {
+        "name": "Obec Klíčany",
+        "lng": 14.4288,
+        "lat": 50.20441,
+        "desc": "Pořízení zametacího stroje pro obec Klíčany",
+        "year": "2013",
+        "vat": "00240303"
+    },
+    {
+        "name": "Obec Korytná",
+        "lng": 17.68139,
+        "lat": 48.93386,
+        "desc": "Redukce prašnosti mobilní technikou v obci Korytná",
+        "year": "2013",
+        "vat": "00291030"
+    },
+    {
+        "name": "Obec Letonice",
+        "lng": 16.96359,
+        "lat": 49.18258,
+        "desc": "Čisté Letonice",
+        "year": "2013",
+        "vat": "00291986"
+    },
+    {
+        "name": "Obec Loučovice",
+        "lng": 14.24137,
+        "lat": 48.61593,
+        "desc": "Snížení prašnosti v obci Loučovice a okolí",
+        "year": "2013",
+        "vat": "00245984"
+    },
+    {
+        "name": "Obec Mnetěš",
+        "lng": 14.26846,
+        "lat": 50.36246,
+        "desc": "Zlepšení čistoty v ulicích obce Mnetěš",
+        "year": "2013",
+        "vat": "00264075"
+    },
+    {
+        "name": "Obec Nivnice",
+        "lng": 17.64804,
+        "lat": 48.97768,
+        "desc": "Čisté silnice, čisté Nivnice",
+        "year": "2013",
+        "vat": "00291170"
+    },
+    {
+        "name": "Obec Novosedly",
+        "lng": 16.50592,
+        "lat": 48.83716,
+        "desc": "Nákup čistící techniky",
+        "year": "2013",
+        "vat": "00283444"
+    },
+    {
+        "name": "Obec Paseka",
+        "lng": 17.23396,
+        "lat": 49.80085,
+        "desc": "Redukce prašnosti mobilní technikou v obci Paseka",
+        "year": "2013",
+        "vat": "00299316"
+    },
+    {
+        "name": "Obec Petrovice",
+        "lng": 14.34443,
+        "lat": 49.56787,
+        "desc": "Snížení emisní v obci Petrovice",
+        "year": "2013",
+        "vat": "00266922"
+    },
+    {
+        "name": "Obec Prace",
+        "lng": 16.76828,
+        "lat": 49.13548,
+        "desc": "Redukce prašnosti mobilní technikou v obci Prace",
+        "year": "2013",
+        "vat": "00599247"
+    },
+    {
+        "name": "Obec Psáry",
+        "lng": 14.51523,
+        "lat": 49.93898,
+        "desc": "Pořízením zametací multikáry k čistému vzduchu v obci Psáry",
+        "year": "2013",
+        "vat": "00241580"
+    },
+    {
+        "name": "Obec Rakvice",
+        "lng": 16.83129,
+        "lat": 48.86042,
+        "desc": "Čisté komunikace – čistý vzduch",
+        "year": "2013",
+        "vat": "00283568"
+    },
+    {
+        "name": "Obec Roudné",
+        "lng": 14.48704,
+        "lat": 48.9342,
+        "desc": "Snížení prašnosti v obci Roudné",
+        "year": "2013",
+        "vat": "00245372"
+    },
+    {
+        "name": "Obec Rudník",
+        "lng": 15.73775,
+        "lat": 50.57778,
+        "desc": "Snížení prašnosti v obci Rudník",
+        "year": "2013",
+        "vat": "00278246"
+    },
+    {
+        "name": "Obec Slavkov",
+        "lng": 17.61186,
+        "lat": 48.9457,
+        "desc": "Pravidelnou údržbou komunikací v obci Slavkov k čistšímu ovzduší",
+        "year": "2013",
+        "vat": "00291315"
+    },
+    {
+        "name": "Obec Srch",
+        "lng": 15.75088,
+        "lat": 50.08489,
+        "desc": "Pro čistý vzduch v obci Srch",
+        "year": "2013",
+        "vat": "00274283"
+    },
+    {
+        "name": "Obec Staré Hradiště",
+        "lng": 15.78705,
+        "lat": 50.07502,
+        "desc": "Zametené silnice, čerstvý vzduch pro Staré Hradiště",
+        "year": "2013",
+        "vat": "00274305"
+    },
+    {
+        "name": "Obec Starovičky",
+        "lng": 16.76975,
+        "lat": 48.91191,
+        "desc": "Čisté ovzduší v obci Starovičky",
+        "year": "2013",
+        "vat": "00283592"
+    },
+    {
+        "name": "Obec Strání",
+        "lng": 17.70288,
+        "lat": 48.90358,
+        "desc": "Redukce prašnosti mobilní technikou v obci Strání",
+        "year": "2013",
+        "vat": "00291340"
+    },
+    {
+        "name": "Obec Tochovice",
+        "lng": 14.00141,
+        "lat": 49.5976,
+        "desc": "Pořízení zametacího stroje pro obec Tochovice",
+        "year": "2013",
+        "vat": "00243418"
+    },
+    {
+        "name": "Obec Únanov",
+        "lng": 16.06209,
+        "lat": 48.90594,
+        "desc": "Snížení prašnosti v obci Únanov",
+        "year": "2013",
+        "vat": "00293725"
+    },
+    {
+        "name": "Obec Vestec",
+        "lng": 14.50156,
+        "lat": 49.9872,
+        "desc": "Snížení prašnosti z plošných zdrojů",
+        "year": "2013",
+        "vat": "00507644"
+    },
+    {
+        "name": "Obec Vodochody",
+        "lng": 14.40224,
+        "lat": 50.20772,
+        "desc": "Čisté ovzduší v obci Vodochody",
+        "year": "2013",
+        "vat": "00240991"
+    },
+    {
+        "name": "Obec Vrbice",
+        "lng": 16.89144,
+        "lat": 48.91305,
+        "desc": "Čisté silnice v obci Vrbice",
+        "year": "2013",
+        "vat": "00283738"
+    },
+    {
+        "name": "Obec Zbraslav",
+        "lng": 14.38487,
+        "lat": 49.96547,
+        "desc": "Zametáme pro zdraví u Brna ve Zbraslavi",
+        "year": "2013",
+        "vat": "00282910"
+    },
+    {
+        "name": "Obec Zbůch",
+        "lng": 13.23367,
+        "lat": 49.68194,
+        "desc": "Snížení prašnosti ve Zbůchu",
+        "year": "2013",
+        "vat": "00258555"
+    },
+    {
+        "name": "Oderská městská společnost, s.r.o.",
+        "lng": 17.83147,
+        "lat": 49.66173,
+        "desc": "Nákup čistící techniky",
+        "year": "2013",
+        "vat": "26839415"
+    },
+    {
+        "name": "ODPADY s.r.o.",
+        "lng": 16.23445,
+        "lat": 50.20197,
+        "desc": "Zkvalitnění služeb společnosti ODPADY s.r.o.",
+        "year": "2013",
+        "vat": "25279246"
+    },
+    {
+        "name": "PARKSERVIS Mareš s.r.o.",
+        "lng": 18.27874,
+        "lat": 49.7776,
+        "desc": "Snížením prašnosti k lepšímu ovzduší",
+        "year": "2013",
+        "vat": "28648285"
+    },
+    {
+        "name": "Podnik místního hospodářství v Hluboké nad Vltavou",
+        "lng": 14.44595,
+        "lat": 49.05509,
+        "desc": "Snížení imisní zátěže v Hluboké nad Vltavou",
+        "year": "2013",
+        "vat": "00070203"
+    },
+    {
+        "name": "Region povodí Mratínského potoka",
+        "lng": 14.51966,
+        "lat": 50.19891,
+        "desc": "Nákup zametacího stroje pro Region Povodí Mratínského potoka",
+        "year": "2013",
+        "vat": "69344485"
+    },
+    {
+        "name": "SÁZAVA-2000 s.r.o.",
+        "lng": 14.90138,
+        "lat": 49.87404,
+        "desc": "Nákup zametacího stroje za účelem poklesu prašnosti",
+        "year": "2013",
+        "vat": "25673971"
+    },
+    {
+        "name": "Sdružení Povodí Sedlnice, dobrovolný svazek obcí",
+        "lng": 18.10207,
+        "lat": 49.61459,
+        "desc": "Čistící technikou k lepšímu ovzduší v mikroregionu",
+        "year": "2013",
+        "vat": "70237093"
+    },
+    {
+        "name": "Sekos Morava a.s.",
+        "lng": 18.29427,
+        "lat": 49.79201,
+        "desc": "Snížení imisní zátěže pořízením čistící techniky",
+        "year": "2013",
+        "vat": "25832654"
+    },
+    {
+        "name": "Služby města Český Krumlov, s.r.o.",
+        "lng": 14.33679,
+        "lat": 48.82288,
+        "desc": "Snížení imisní zátěže v městě Český Krumlov",
+        "year": "2013",
+        "vat": "25151321"
+    },
+    {
+        "name": "Služby města Pardubic a.s.",
+        "lng": 15.81018,
+        "lat": 50.04778,
+        "desc": "Zametáme v ulicích, volně dýcháme v Pardubicích",
+        "year": "2013",
+        "vat": "25262572"
+    },
+    {
+        "name": "SmP - Odpady a.s.",
+        "lng": 15.81018,
+        "lat": 50.04778,
+        "desc": "Zefektivnění nakládání s odpady",
+        "year": "2013",
+        "vat": "27547230"
+    },
+    {
+        "name": "Správa a údržba silnic Pardubického kraje",
+        "lng": 15.74788,
+        "lat": 50.06479,
+        "desc": "Pořízení čistících strojů ",
+        "year": "2013",
+        "vat": "00085031"
+    },
+    {
+        "name": "Stavební centrum sever s.r.o.",
+        "lng": 13.40358,
+        "lat": 50.22537,
+        "desc": "Test ",
+        "year": "2013",
+        "vat": "24282421"
+    },
+    {
+        "name": "Stora Enso Wood Products Planá, s.r.o.",
+        "lng": 12.72214,
+        "lat": 49.86291,
+        "desc": "Snížení prašnosti v areálu společnosti Stora Enso v Plané",
+        "year": "2013",
+        "vat": "64361179"
+    },
+    {
+        "name": "Sušické lesy a služby, s.r.o.",
+        "lng": 13.51428,
+        "lat": 49.22826,
+        "desc": "Snížení prašnosti v městě Sušice a okolí",
+        "year": "2013",
+        "vat": "26358450"
+    },
+    {
+        "name": "Svazek obcí mikroregionu Loucko",
+        "lng": 15.70577,
+        "lat": 49.37347,
+        "desc": "Úklid komunikací v mikroregionu Loucko",
+        "year": "2013",
+        "vat": "71224203"
+    },
+    {
+        "name": "TANNACO Poděbrady s.r.o.",
+        "lng": 15.11363,
+        "lat": 50.13005,
+        "desc": "Pořízení zametacího stroje",
+        "year": "2013",
+        "vat": "25845365"
+    },
+    {
+        "name": "Technická služba města Toužim, příspěvková organizace",
+        "lng": 12.99106,
+        "lat": 50.05833,
+        "desc": "Třídění, svoz a zpracování biodpadu",
+        "year": "2013",
+        "vat": "70899525"
+    },
+    {
+        "name": "Technické služby Hostivice",
+        "lng": 14.26026,
+        "lat": 50.08219,
+        "desc": "Technické služby Hostivice snižují prašné imise",
+        "year": "2013",
+        "vat": "00875210"
+    },
+    {
+        "name": "Technické služby Hustopeče, s.r.o.",
+        "lng": 16.72979,
+        "lat": 48.93488,
+        "desc": "Redukce prašnosti mobilní technikou",
+        "year": "2013",
+        "vat": "25550683"
+    },
+    {
+        "name": "Technické služby Kralice, s.r.o.",
+        "lng": 16.20092,
+        "lat": 49.19984,
+        "desc": "Redukce prašnosti mobilní technikou",
+        "year": "2013",
+        "vat": "27738213"
+    },
+    {
+        "name": "Technické služby města Mělník, přísp. org.",
+        "lng": 14.46855,
+        "lat": 50.35817,
+        "desc": "Pořízení čistícího stroje",
+        "year": "2013",
+        "vat": "00066451"
+    },
+    {
+        "name": "Technické služby města Varnsdorf",
+        "lng": 14.61125,
+        "lat": 50.90881,
+        "desc": "Varnsdorf - snížení imisní zátěže",
+        "year": "2013",
+        "vat": "25017098"
+    },
+    {
+        "name": "Technické služby Praha - Radotín",
+        "lng": 14.34398,
+        "lat": 49.99254,
+        "desc": "Vyčistíme účinně silnice v Radotíně",
+        "year": "2013",
+        "vat": "70889678"
+    },
+    {
+        "name": "Technické služby Prachatice, s.r.o.",
+        "lng": 14.00697,
+        "lat": 49.00533,
+        "desc": "Snížení imisní zátěže v městě Prachatice",
+        "year": "2013",
+        "vat": "62501623"
+    },
+    {
+        "name": "Technické služby Slaný, s.r.o.",
+        "lng": 14.08607,
+        "lat": 50.23312,
+        "desc": "Zametené město Slaný přinese vzduch zdraví",
+        "year": "2013",
+        "vat": "62958437"
+    },
+    {
+        "name": "TESMA Jaroměřice s.r.o.",
+        "lng": 15.86884,
+        "lat": 49.09394,
+        "desc": "Nákup čistící techniky",
+        "year": "2013",
+        "vat": "25582666"
+    },
+    {
+        "name": "Titan Real Invest, a.s.",
+        "lng": 14.65901,
+        "lat": 49.99854,
+        "desc": "Snížení prašnosti z plošných zdrojů",
+        "year": "2013",
+        "vat": "28186524"
+    },
+    {
+        "name": "TREND ABC, s.r.o.",
+        "lng": 17.53042,
+        "lat": 48.98365,
+        "desc": "Čisté komunikace - čistší ovzduší",
+        "year": "2013",
+        "vat": "26919010"
+    },
+    {
+        "name": "TVD - Technická výroba, a.s.",
+        "lng": 17.92975,
+        "lat": 49.06878,
+        "desc": "Redukce prašnosti: TVD-Technická výroba, a.s.",
+        "year": "2013",
+        "vat": "26252937"
+    },
+    {
+        "name": "Údržba městských komunikací Rakovník, s.r.o.",
+        "lng": 13.76312,
+        "lat": 50.09784,
+        "desc": "Nákup technologií za účelem snížení prašnosti",
+        "year": "2013",
+        "vat": "25073249"
+    },
+    {
+        "name": "USK, s.r.o.",
+        "lng": 14.89469,
+        "lat": 50.40472,
+        "desc": "Čisté silniční komunikace",
+        "year": "2013",
+        "vat": "27138551"
+    },
+    {
+        "name": "Zámecký dvůr s.r.o.",
+        "lng": 18.44312,
+        "lat": 49.76379,
+        "desc": "Snížení prašnosti",
+        "year": "2013",
+        "vat": "27834395"
+    }
+];
+
+
+/***/ }),
+
+/***/ "./Resources/Scripts/navigation.ts":
+/*!*****************************************!*\
+  !*** ./Resources/Scripts/navigation.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.initNav = void 0;
+const menuBtn = document.getElementById('menuBtn');
+const menu = document.querySelector('.nav__menu');
+const nav = document.querySelector('nav');
+const navItems = document.querySelectorAll('.nav__item');
+const htmlDoc = document.querySelector('body');
+function toggleOpenMenuClasses() {
+    menuBtn.classList.toggle('burger--open');
+    menu.classList.toggle('nav__menu--open');
+    nav.classList.toggle('nav--open');
+    htmlDoc.classList.toggle('overflow-hidden');
+}
+function initNav() {
+    menuBtn.addEventListener('click', () => {
+        toggleOpenMenuClasses();
+    });
+    navItems.forEach(navItems => {
+        navItems.addEventListener('click', () => {
+            toggleOpenMenuClasses();
+        });
+    });
+}
+exports.initNav = initNav;
+
+
+/***/ }),
+
+/***/ "./Resources/Scripts/year.ts":
+/*!***********************************!*\
+  !*** ./Resources/Scripts/year.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setCurentYear = void 0;
+function setCurentYear() {
+    const years = document.querySelectorAll('time.year');
+    years.forEach(year => {
+        year.innerHTML = new Date().getFullYear().toString();
+    });
+}
+exports.setCurentYear = setCurentYear;
+
+
+/***/ }),
+
+/***/ "./node_modules/@turf/clone/dist/es/index.js":
+/*!***************************************************!*\
+  !*** ./node_modules/@turf/clone/dist/es/index.js ***!
+  \***************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/**
+ * Returns a cloned copy of the passed GeoJSON Object, including possible 'Foreign Members'.
+ * ~3-5x faster than the common JSON.parse + JSON.stringify combo method.
+ *
+ * @name clone
+ * @param {GeoJSON} geojson GeoJSON Object
+ * @returns {GeoJSON} cloned GeoJSON Object
+ * @example
+ * var line = turf.lineString([[-74, 40], [-78, 42], [-82, 35]], {color: 'red'});
+ *
+ * var lineCloned = turf.clone(line);
+ */
+function clone(geojson) {
+    if (!geojson) {
+        throw new Error("geojson is required");
+    }
+    switch (geojson.type) {
+        case "Feature":
+            return cloneFeature(geojson);
+        case "FeatureCollection":
+            return cloneFeatureCollection(geojson);
+        case "Point":
+        case "LineString":
+        case "Polygon":
+        case "MultiPoint":
+        case "MultiLineString":
+        case "MultiPolygon":
+        case "GeometryCollection":
+            return cloneGeometry(geojson);
+        default:
+            throw new Error("unknown GeoJSON type");
+    }
+}
+/**
+ * Clone Feature
+ *
+ * @private
+ * @param {Feature<any>} geojson GeoJSON Feature
+ * @returns {Feature<any>} cloned Feature
+ */
+function cloneFeature(geojson) {
+    var cloned = { type: "Feature" };
+    // Preserve Foreign Members
+    Object.keys(geojson).forEach(function (key) {
+        switch (key) {
+            case "type":
+            case "properties":
+            case "geometry":
+                return;
+            default:
+                cloned[key] = geojson[key];
+        }
+    });
+    // Add properties & geometry last
+    cloned.properties = cloneProperties(geojson.properties);
+    cloned.geometry = cloneGeometry(geojson.geometry);
+    return cloned;
+}
+/**
+ * Clone Properties
+ *
+ * @private
+ * @param {Object} properties GeoJSON Properties
+ * @returns {Object} cloned Properties
+ */
+function cloneProperties(properties) {
+    var cloned = {};
+    if (!properties) {
+        return cloned;
+    }
+    Object.keys(properties).forEach(function (key) {
+        var value = properties[key];
+        if (typeof value === "object") {
+            if (value === null) {
+                // handle null
+                cloned[key] = null;
+            }
+            else if (Array.isArray(value)) {
+                // handle Array
+                cloned[key] = value.map(function (item) {
+                    return item;
+                });
+            }
+            else {
+                // handle generic Object
+                cloned[key] = cloneProperties(value);
+            }
+        }
+        else {
+            cloned[key] = value;
+        }
+    });
+    return cloned;
+}
+/**
+ * Clone Feature Collection
+ *
+ * @private
+ * @param {FeatureCollection<any>} geojson GeoJSON Feature Collection
+ * @returns {FeatureCollection<any>} cloned Feature Collection
+ */
+function cloneFeatureCollection(geojson) {
+    var cloned = { type: "FeatureCollection" };
+    // Preserve Foreign Members
+    Object.keys(geojson).forEach(function (key) {
+        switch (key) {
+            case "type":
+            case "features":
+                return;
+            default:
+                cloned[key] = geojson[key];
+        }
+    });
+    // Add features
+    cloned.features = geojson.features.map(function (feature) {
+        return cloneFeature(feature);
+    });
+    return cloned;
+}
+/**
+ * Clone Geometry
+ *
+ * @private
+ * @param {Geometry<any>} geometry GeoJSON Geometry
+ * @returns {Geometry<any>} cloned Geometry
+ */
+function cloneGeometry(geometry) {
+    var geom = { type: geometry.type };
+    if (geometry.bbox) {
+        geom.bbox = geometry.bbox;
+    }
+    if (geometry.type === "GeometryCollection") {
+        geom.geometries = geometry.geometries.map(function (g) {
+            return cloneGeometry(g);
+        });
+        return geom;
+    }
+    geom.coordinates = deepSlice(geometry.coordinates);
+    return geom;
+}
+/**
+ * Deep Slice coordinates
+ *
+ * @private
+ * @param {Coordinates} coords Coordinates
+ * @returns {Coordinates} all coordinates sliced
+ */
+function deepSlice(coords) {
+    var cloned = coords;
+    if (typeof cloned[0] !== "object") {
+        return cloned.slice();
+    }
+    return cloned.map(function (coord) {
+        return deepSlice(coord);
+    });
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (clone);
+
+
+/***/ }),
+
+/***/ "./node_modules/@turf/clusters-dbscan/dist/es/index.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/@turf/clusters-dbscan/dist/es/index.js ***!
+  \*************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _turf_clone__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @turf/clone */ "./node_modules/@turf/clone/dist/es/index.js");
+/* harmony import */ var _turf_distance__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @turf/distance */ "./node_modules/@turf/distance/dist/es/index.js");
+/* harmony import */ var _turf_meta__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @turf/meta */ "./node_modules/@turf/meta/dist/es/index.js");
+/* harmony import */ var _turf_helpers__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @turf/helpers */ "./node_modules/@turf/helpers/dist/es/index.js");
+/* harmony import */ var density_clustering__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! density-clustering */ "./node_modules/density-clustering/lib/index.js");
+
+
+
+
+
+/**
+ * Takes a set of {@link Point|points} and partition them into clusters according to {@link DBSCAN's|https://en.wikipedia.org/wiki/DBSCAN} data clustering algorithm.
+ *
+ * @name clustersDbscan
+ * @param {FeatureCollection<Point>} points to be clustered
+ * @param {number} maxDistance Maximum Distance between any point of the cluster to generate the clusters (kilometers only)
+ * @param {Object} [options={}] Optional parameters
+ * @param {string} [options.units="kilometers"] in which `maxDistance` is expressed, can be degrees, radians, miles, or kilometers
+ * @param {boolean} [options.mutate=false] Allows GeoJSON input to be mutated
+ * @param {number} [options.minPoints=3] Minimum number of points to generate a single cluster,
+ * points which do not meet this requirement will be classified as an 'edge' or 'noise'.
+ * @returns {FeatureCollection<Point>} Clustered Points with an additional two properties associated to each Feature:
+ * - {number} cluster - the associated clusterId
+ * - {string} dbscan - type of point it has been classified as ('core'|'edge'|'noise')
+ * @example
+ * // create random points with random z-values in their properties
+ * var points = turf.randomPoint(100, {bbox: [0, 30, 20, 50]});
+ * var maxDistance = 100;
+ * var clustered = turf.clustersDbscan(points, maxDistance);
+ *
+ * //addToMap
+ * var addToMap = [clustered];
+ */
+function clustersDbscan(points, maxDistance, options) {
+    // Input validation being handled by Typescript
+    // collectionOf(points, 'Point', 'points must consist of a FeatureCollection of only Points');
+    // if (maxDistance === null || maxDistance === undefined) throw new Error('maxDistance is required');
+    // if (!(Math.sign(maxDistance) > 0)) throw new Error('maxDistance is invalid');
+    // if (!(minPoints === undefined || minPoints === null || Math.sign(minPoints) > 0)) throw new Error('options.minPoints is invalid');
+    if (options === void 0) { options = {}; }
+    // Clone points to prevent any mutations
+    if (options.mutate !== true)
+        points = (0,_turf_clone__WEBPACK_IMPORTED_MODULE_0__["default"])(points);
+    // Defaults
+    options.minPoints = options.minPoints || 3;
+    // create clustered ids
+    var dbscan = new density_clustering__WEBPACK_IMPORTED_MODULE_4__.DBSCAN();
+    var clusteredIds = dbscan.run((0,_turf_meta__WEBPACK_IMPORTED_MODULE_2__.coordAll)(points), (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_3__.convertLength)(maxDistance, options.units), options.minPoints, _turf_distance__WEBPACK_IMPORTED_MODULE_1__["default"]);
+    // Tag points to Clusters ID
+    var clusterId = -1;
+    clusteredIds.forEach(function (clusterIds) {
+        clusterId++;
+        // assign cluster ids to input points
+        clusterIds.forEach(function (idx) {
+            var clusterPoint = points.features[idx];
+            if (!clusterPoint.properties)
+                clusterPoint.properties = {};
+            clusterPoint.properties.cluster = clusterId;
+            clusterPoint.properties.dbscan = "core";
+        });
+    });
+    // handle noise points, if any
+    // edges points are tagged by DBSCAN as both 'noise' and 'cluster' as they can "reach" less than 'minPoints' number of points
+    dbscan.noise.forEach(function (noiseId) {
+        var noisePoint = points.features[noiseId];
+        if (!noisePoint.properties)
+            noisePoint.properties = {};
+        if (noisePoint.properties.cluster)
+            noisePoint.properties.dbscan = "edge";
+        else
+            noisePoint.properties.dbscan = "noise";
+    });
+    return points;
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (clustersDbscan);
+
+
+/***/ }),
+
+/***/ "./node_modules/@turf/clusters-kmeans/dist/es/index.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/@turf/clusters-kmeans/dist/es/index.js ***!
+  \*************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _turf_clone__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @turf/clone */ "./node_modules/@turf/clone/dist/es/index.js");
+/* harmony import */ var _turf_meta__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @turf/meta */ "./node_modules/@turf/meta/dist/es/index.js");
+/* harmony import */ var skmeans__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! skmeans */ "./node_modules/skmeans/dist/node/main.js");
+
+
+
+/**
+ * Takes a set of {@link Point|points} and partition them into clusters using the k-mean .
+ * It uses the [k-means algorithm](https://en.wikipedia.org/wiki/K-means_clustering)
+ *
+ * @name clustersKmeans
+ * @param {FeatureCollection<Point>} points to be clustered
+ * @param {Object} [options={}] Optional parameters
+ * @param {number} [options.numberOfClusters=Math.sqrt(numberOfPoints/2)] numberOfClusters that will be generated
+ * @param {boolean} [options.mutate=false] allows GeoJSON input to be mutated (significant performance increase if true)
+ * @returns {FeatureCollection<Point>} Clustered Points with an additional two properties associated to each Feature:
+ * - {number} cluster - the associated clusterId
+ * - {[number, number]} centroid - Centroid of the cluster [Longitude, Latitude]
+ * @example
+ * // create random points with random z-values in their properties
+ * var points = turf.randomPoint(100, {bbox: [0, 30, 20, 50]});
+ * var options = {numberOfClusters: 7};
+ * var clustered = turf.clustersKmeans(points, options);
+ *
+ * //addToMap
+ * var addToMap = [clustered];
+ */
+function clustersKmeans(points, options) {
+    if (options === void 0) { options = {}; }
+    // Default Params
+    var count = points.features.length;
+    options.numberOfClusters =
+        options.numberOfClusters || Math.round(Math.sqrt(count / 2));
+    // numberOfClusters can't be greater than the number of points
+    // fallbacks to count
+    if (options.numberOfClusters > count)
+        options.numberOfClusters = count;
+    // Clone points to prevent any mutations (enabled by default)
+    if (options.mutate !== true)
+        points = (0,_turf_clone__WEBPACK_IMPORTED_MODULE_0__["default"])(points);
+    // collect points coordinates
+    var data = (0,_turf_meta__WEBPACK_IMPORTED_MODULE_1__.coordAll)(points);
+    // create seed to avoid skmeans to drift
+    var initialCentroids = data.slice(0, options.numberOfClusters);
+    // create skmeans clusters
+    var skmeansResult = skmeans__WEBPACK_IMPORTED_MODULE_2__(data, options.numberOfClusters, initialCentroids);
+    // store centroids {clusterId: [number, number]}
+    var centroids = {};
+    skmeansResult.centroids.forEach(function (coord, idx) {
+        centroids[idx] = coord;
+    });
+    // add associated cluster number
+    (0,_turf_meta__WEBPACK_IMPORTED_MODULE_1__.featureEach)(points, function (point, index) {
+        var clusterId = skmeansResult.idxs[index];
+        point.properties.cluster = clusterId;
+        point.properties.centroid = centroids[clusterId];
+    });
+    return points;
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (clustersKmeans);
+
+
+/***/ }),
+
+/***/ "./node_modules/@turf/distance/dist/es/index.js":
+/*!******************************************************!*\
+  !*** ./node_modules/@turf/distance/dist/es/index.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _turf_invariant__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @turf/invariant */ "./node_modules/@turf/invariant/dist/es/index.js");
+/* harmony import */ var _turf_helpers__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @turf/helpers */ "./node_modules/@turf/helpers/dist/es/index.js");
+
+
+//http://en.wikipedia.org/wiki/Haversine_formula
+//http://www.movable-type.co.uk/scripts/latlong.html
+/**
+ * Calculates the distance between two {@link Point|points} in degrees, radians, miles, or kilometers.
+ * This uses the [Haversine formula](http://en.wikipedia.org/wiki/Haversine_formula) to account for global curvature.
+ *
+ * @name distance
+ * @param {Coord | Point} from origin point or coordinate
+ * @param {Coord | Point} to destination point or coordinate
+ * @param {Object} [options={}] Optional parameters
+ * @param {string} [options.units='kilometers'] can be degrees, radians, miles, or kilometers
+ * @returns {number} distance between the two points
+ * @example
+ * var from = turf.point([-75.343, 39.984]);
+ * var to = turf.point([-75.534, 39.123]);
+ * var options = {units: 'miles'};
+ *
+ * var distance = turf.distance(from, to, options);
+ *
+ * //addToMap
+ * var addToMap = [from, to];
+ * from.properties.distance = distance;
+ * to.properties.distance = distance;
+ */
+function distance(from, to, options) {
+    if (options === void 0) { options = {}; }
+    var coordinates1 = (0,_turf_invariant__WEBPACK_IMPORTED_MODULE_0__.getCoord)(from);
+    var coordinates2 = (0,_turf_invariant__WEBPACK_IMPORTED_MODULE_0__.getCoord)(to);
+    var dLat = (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_1__.degreesToRadians)(coordinates2[1] - coordinates1[1]);
+    var dLon = (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_1__.degreesToRadians)(coordinates2[0] - coordinates1[0]);
+    var lat1 = (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_1__.degreesToRadians)(coordinates1[1]);
+    var lat2 = (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_1__.degreesToRadians)(coordinates2[1]);
+    var a = Math.pow(Math.sin(dLat / 2), 2) +
+        Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
+    return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_1__.radiansToLength)(2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)), options.units);
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (distance);
+
+
+/***/ }),
+
+/***/ "./node_modules/@turf/helpers/dist/es/index.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/@turf/helpers/dist/es/index.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "earthRadius": () => (/* binding */ earthRadius),
+/* harmony export */   "factors": () => (/* binding */ factors),
+/* harmony export */   "unitsFactors": () => (/* binding */ unitsFactors),
+/* harmony export */   "areaFactors": () => (/* binding */ areaFactors),
+/* harmony export */   "feature": () => (/* binding */ feature),
+/* harmony export */   "geometry": () => (/* binding */ geometry),
+/* harmony export */   "point": () => (/* binding */ point),
+/* harmony export */   "points": () => (/* binding */ points),
+/* harmony export */   "polygon": () => (/* binding */ polygon),
+/* harmony export */   "polygons": () => (/* binding */ polygons),
+/* harmony export */   "lineString": () => (/* binding */ lineString),
+/* harmony export */   "lineStrings": () => (/* binding */ lineStrings),
+/* harmony export */   "featureCollection": () => (/* binding */ featureCollection),
+/* harmony export */   "multiLineString": () => (/* binding */ multiLineString),
+/* harmony export */   "multiPoint": () => (/* binding */ multiPoint),
+/* harmony export */   "multiPolygon": () => (/* binding */ multiPolygon),
+/* harmony export */   "geometryCollection": () => (/* binding */ geometryCollection),
+/* harmony export */   "round": () => (/* binding */ round),
+/* harmony export */   "radiansToLength": () => (/* binding */ radiansToLength),
+/* harmony export */   "lengthToRadians": () => (/* binding */ lengthToRadians),
+/* harmony export */   "lengthToDegrees": () => (/* binding */ lengthToDegrees),
+/* harmony export */   "bearingToAzimuth": () => (/* binding */ bearingToAzimuth),
+/* harmony export */   "radiansToDegrees": () => (/* binding */ radiansToDegrees),
+/* harmony export */   "degreesToRadians": () => (/* binding */ degreesToRadians),
+/* harmony export */   "convertLength": () => (/* binding */ convertLength),
+/* harmony export */   "convertArea": () => (/* binding */ convertArea),
+/* harmony export */   "isNumber": () => (/* binding */ isNumber),
+/* harmony export */   "isObject": () => (/* binding */ isObject),
+/* harmony export */   "validateBBox": () => (/* binding */ validateBBox),
+/* harmony export */   "validateId": () => (/* binding */ validateId)
+/* harmony export */ });
+/**
+ * @module helpers
+ */
+/**
+ * Earth Radius used with the Harvesine formula and approximates using a spherical (non-ellipsoid) Earth.
+ *
+ * @memberof helpers
+ * @type {number}
+ */
+var earthRadius = 6371008.8;
+/**
+ * Unit of measurement factors using a spherical (non-ellipsoid) earth radius.
+ *
+ * @memberof helpers
+ * @type {Object}
+ */
+var factors = {
+    centimeters: earthRadius * 100,
+    centimetres: earthRadius * 100,
+    degrees: earthRadius / 111325,
+    feet: earthRadius * 3.28084,
+    inches: earthRadius * 39.37,
+    kilometers: earthRadius / 1000,
+    kilometres: earthRadius / 1000,
+    meters: earthRadius,
+    metres: earthRadius,
+    miles: earthRadius / 1609.344,
+    millimeters: earthRadius * 1000,
+    millimetres: earthRadius * 1000,
+    nauticalmiles: earthRadius / 1852,
+    radians: 1,
+    yards: earthRadius * 1.0936,
+};
+/**
+ * Units of measurement factors based on 1 meter.
+ *
+ * @memberof helpers
+ * @type {Object}
+ */
+var unitsFactors = {
+    centimeters: 100,
+    centimetres: 100,
+    degrees: 1 / 111325,
+    feet: 3.28084,
+    inches: 39.37,
+    kilometers: 1 / 1000,
+    kilometres: 1 / 1000,
+    meters: 1,
+    metres: 1,
+    miles: 1 / 1609.344,
+    millimeters: 1000,
+    millimetres: 1000,
+    nauticalmiles: 1 / 1852,
+    radians: 1 / earthRadius,
+    yards: 1.0936133,
+};
+/**
+ * Area of measurement factors based on 1 square meter.
+ *
+ * @memberof helpers
+ * @type {Object}
+ */
+var areaFactors = {
+    acres: 0.000247105,
+    centimeters: 10000,
+    centimetres: 10000,
+    feet: 10.763910417,
+    hectares: 0.0001,
+    inches: 1550.003100006,
+    kilometers: 0.000001,
+    kilometres: 0.000001,
+    meters: 1,
+    metres: 1,
+    miles: 3.86e-7,
+    millimeters: 1000000,
+    millimetres: 1000000,
+    yards: 1.195990046,
+};
+/**
+ * Wraps a GeoJSON {@link Geometry} in a GeoJSON {@link Feature}.
+ *
+ * @name feature
+ * @param {Geometry} geometry input geometry
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature} a GeoJSON Feature
+ * @example
+ * var geometry = {
+ *   "type": "Point",
+ *   "coordinates": [110, 50]
+ * };
+ *
+ * var feature = turf.feature(geometry);
+ *
+ * //=feature
+ */
+function feature(geom, properties, options) {
+    if (options === void 0) { options = {}; }
+    var feat = { type: "Feature" };
+    if (options.id === 0 || options.id) {
+        feat.id = options.id;
+    }
+    if (options.bbox) {
+        feat.bbox = options.bbox;
+    }
+    feat.properties = properties || {};
+    feat.geometry = geom;
+    return feat;
+}
+/**
+ * Creates a GeoJSON {@link Geometry} from a Geometry string type & coordinates.
+ * For GeometryCollection type use `helpers.geometryCollection`
+ *
+ * @name geometry
+ * @param {string} type Geometry Type
+ * @param {Array<any>} coordinates Coordinates
+ * @param {Object} [options={}] Optional Parameters
+ * @returns {Geometry} a GeoJSON Geometry
+ * @example
+ * var type = "Point";
+ * var coordinates = [110, 50];
+ * var geometry = turf.geometry(type, coordinates);
+ * // => geometry
+ */
+function geometry(type, coordinates, _options) {
+    if (_options === void 0) { _options = {}; }
+    switch (type) {
+        case "Point":
+            return point(coordinates).geometry;
+        case "LineString":
+            return lineString(coordinates).geometry;
+        case "Polygon":
+            return polygon(coordinates).geometry;
+        case "MultiPoint":
+            return multiPoint(coordinates).geometry;
+        case "MultiLineString":
+            return multiLineString(coordinates).geometry;
+        case "MultiPolygon":
+            return multiPolygon(coordinates).geometry;
+        default:
+            throw new Error(type + " is invalid");
+    }
+}
+/**
+ * Creates a {@link Point} {@link Feature} from a Position.
+ *
+ * @name point
+ * @param {Array<number>} coordinates longitude, latitude position (each in decimal degrees)
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<Point>} a Point feature
+ * @example
+ * var point = turf.point([-75.343, 39.984]);
+ *
+ * //=point
+ */
+function point(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    if (!coordinates) {
+        throw new Error("coordinates is required");
+    }
+    if (!Array.isArray(coordinates)) {
+        throw new Error("coordinates must be an Array");
+    }
+    if (coordinates.length < 2) {
+        throw new Error("coordinates must be at least 2 numbers long");
+    }
+    if (!isNumber(coordinates[0]) || !isNumber(coordinates[1])) {
+        throw new Error("coordinates must contain numbers");
+    }
+    var geom = {
+        type: "Point",
+        coordinates: coordinates,
+    };
+    return feature(geom, properties, options);
+}
+/**
+ * Creates a {@link Point} {@link FeatureCollection} from an Array of Point coordinates.
+ *
+ * @name points
+ * @param {Array<Array<number>>} coordinates an array of Points
+ * @param {Object} [properties={}] Translate these properties to each Feature
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north]
+ * associated with the FeatureCollection
+ * @param {string|number} [options.id] Identifier associated with the FeatureCollection
+ * @returns {FeatureCollection<Point>} Point Feature
+ * @example
+ * var points = turf.points([
+ *   [-75, 39],
+ *   [-80, 45],
+ *   [-78, 50]
+ * ]);
+ *
+ * //=points
+ */
+function points(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    return featureCollection(coordinates.map(function (coords) {
+        return point(coords, properties);
+    }), options);
+}
+/**
+ * Creates a {@link Polygon} {@link Feature} from an Array of LinearRings.
+ *
+ * @name polygon
+ * @param {Array<Array<Array<number>>>} coordinates an array of LinearRings
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<Polygon>} Polygon Feature
+ * @example
+ * var polygon = turf.polygon([[[-5, 52], [-4, 56], [-2, 51], [-7, 54], [-5, 52]]], { name: 'poly1' });
+ *
+ * //=polygon
+ */
+function polygon(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    for (var _i = 0, coordinates_1 = coordinates; _i < coordinates_1.length; _i++) {
+        var ring = coordinates_1[_i];
+        if (ring.length < 4) {
+            throw new Error("Each LinearRing of a Polygon must have 4 or more Positions.");
+        }
+        for (var j = 0; j < ring[ring.length - 1].length; j++) {
+            // Check if first point of Polygon contains two numbers
+            if (ring[ring.length - 1][j] !== ring[0][j]) {
+                throw new Error("First and last Position are not equivalent.");
+            }
+        }
+    }
+    var geom = {
+        type: "Polygon",
+        coordinates: coordinates,
+    };
+    return feature(geom, properties, options);
+}
+/**
+ * Creates a {@link Polygon} {@link FeatureCollection} from an Array of Polygon coordinates.
+ *
+ * @name polygons
+ * @param {Array<Array<Array<Array<number>>>>} coordinates an array of Polygon coordinates
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the FeatureCollection
+ * @returns {FeatureCollection<Polygon>} Polygon FeatureCollection
+ * @example
+ * var polygons = turf.polygons([
+ *   [[[-5, 52], [-4, 56], [-2, 51], [-7, 54], [-5, 52]]],
+ *   [[[-15, 42], [-14, 46], [-12, 41], [-17, 44], [-15, 42]]],
+ * ]);
+ *
+ * //=polygons
+ */
+function polygons(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    return featureCollection(coordinates.map(function (coords) {
+        return polygon(coords, properties);
+    }), options);
+}
+/**
+ * Creates a {@link LineString} {@link Feature} from an Array of Positions.
+ *
+ * @name lineString
+ * @param {Array<Array<number>>} coordinates an array of Positions
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<LineString>} LineString Feature
+ * @example
+ * var linestring1 = turf.lineString([[-24, 63], [-23, 60], [-25, 65], [-20, 69]], {name: 'line 1'});
+ * var linestring2 = turf.lineString([[-14, 43], [-13, 40], [-15, 45], [-10, 49]], {name: 'line 2'});
+ *
+ * //=linestring1
+ * //=linestring2
+ */
+function lineString(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    if (coordinates.length < 2) {
+        throw new Error("coordinates must be an array of two or more positions");
+    }
+    var geom = {
+        type: "LineString",
+        coordinates: coordinates,
+    };
+    return feature(geom, properties, options);
+}
+/**
+ * Creates a {@link LineString} {@link FeatureCollection} from an Array of LineString coordinates.
+ *
+ * @name lineStrings
+ * @param {Array<Array<Array<number>>>} coordinates an array of LinearRings
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north]
+ * associated with the FeatureCollection
+ * @param {string|number} [options.id] Identifier associated with the FeatureCollection
+ * @returns {FeatureCollection<LineString>} LineString FeatureCollection
+ * @example
+ * var linestrings = turf.lineStrings([
+ *   [[-24, 63], [-23, 60], [-25, 65], [-20, 69]],
+ *   [[-14, 43], [-13, 40], [-15, 45], [-10, 49]]
+ * ]);
+ *
+ * //=linestrings
+ */
+function lineStrings(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    return featureCollection(coordinates.map(function (coords) {
+        return lineString(coords, properties);
+    }), options);
+}
+/**
+ * Takes one or more {@link Feature|Features} and creates a {@link FeatureCollection}.
+ *
+ * @name featureCollection
+ * @param {Feature[]} features input features
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {FeatureCollection} FeatureCollection of Features
+ * @example
+ * var locationA = turf.point([-75.343, 39.984], {name: 'Location A'});
+ * var locationB = turf.point([-75.833, 39.284], {name: 'Location B'});
+ * var locationC = turf.point([-75.534, 39.123], {name: 'Location C'});
+ *
+ * var collection = turf.featureCollection([
+ *   locationA,
+ *   locationB,
+ *   locationC
+ * ]);
+ *
+ * //=collection
+ */
+function featureCollection(features, options) {
+    if (options === void 0) { options = {}; }
+    var fc = { type: "FeatureCollection" };
+    if (options.id) {
+        fc.id = options.id;
+    }
+    if (options.bbox) {
+        fc.bbox = options.bbox;
+    }
+    fc.features = features;
+    return fc;
+}
+/**
+ * Creates a {@link Feature<MultiLineString>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name multiLineString
+ * @param {Array<Array<Array<number>>>} coordinates an array of LineStrings
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<MultiLineString>} a MultiLineString feature
+ * @throws {Error} if no coordinates are passed
+ * @example
+ * var multiLine = turf.multiLineString([[[0,0],[10,10]]]);
+ *
+ * //=multiLine
+ */
+function multiLineString(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    var geom = {
+        type: "MultiLineString",
+        coordinates: coordinates,
+    };
+    return feature(geom, properties, options);
+}
+/**
+ * Creates a {@link Feature<MultiPoint>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name multiPoint
+ * @param {Array<Array<number>>} coordinates an array of Positions
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<MultiPoint>} a MultiPoint feature
+ * @throws {Error} if no coordinates are passed
+ * @example
+ * var multiPt = turf.multiPoint([[0,0],[10,10]]);
+ *
+ * //=multiPt
+ */
+function multiPoint(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    var geom = {
+        type: "MultiPoint",
+        coordinates: coordinates,
+    };
+    return feature(geom, properties, options);
+}
+/**
+ * Creates a {@link Feature<MultiPolygon>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name multiPolygon
+ * @param {Array<Array<Array<Array<number>>>>} coordinates an array of Polygons
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<MultiPolygon>} a multipolygon feature
+ * @throws {Error} if no coordinates are passed
+ * @example
+ * var multiPoly = turf.multiPolygon([[[[0,0],[0,10],[10,10],[10,0],[0,0]]]]);
+ *
+ * //=multiPoly
+ *
+ */
+function multiPolygon(coordinates, properties, options) {
+    if (options === void 0) { options = {}; }
+    var geom = {
+        type: "MultiPolygon",
+        coordinates: coordinates,
+    };
+    return feature(geom, properties, options);
+}
+/**
+ * Creates a {@link Feature<GeometryCollection>} based on a
+ * coordinate array. Properties can be added optionally.
+ *
+ * @name geometryCollection
+ * @param {Array<Geometry>} geometries an array of GeoJSON Geometries
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<GeometryCollection>} a GeoJSON GeometryCollection Feature
+ * @example
+ * var pt = turf.geometry("Point", [100, 0]);
+ * var line = turf.geometry("LineString", [[101, 0], [102, 1]]);
+ * var collection = turf.geometryCollection([pt, line]);
+ *
+ * // => collection
+ */
+function geometryCollection(geometries, properties, options) {
+    if (options === void 0) { options = {}; }
+    var geom = {
+        type: "GeometryCollection",
+        geometries: geometries,
+    };
+    return feature(geom, properties, options);
+}
+/**
+ * Round number to precision
+ *
+ * @param {number} num Number
+ * @param {number} [precision=0] Precision
+ * @returns {number} rounded number
+ * @example
+ * turf.round(120.4321)
+ * //=120
+ *
+ * turf.round(120.4321, 2)
+ * //=120.43
+ */
+function round(num, precision) {
+    if (precision === void 0) { precision = 0; }
+    if (precision && !(precision >= 0)) {
+        throw new Error("precision must be a positive number");
+    }
+    var multiplier = Math.pow(10, precision || 0);
+    return Math.round(num * multiplier) / multiplier;
+}
+/**
+ * Convert a distance measurement (assuming a spherical Earth) from radians to a more friendly unit.
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ *
+ * @name radiansToLength
+ * @param {number} radians in radians across the sphere
+ * @param {string} [units="kilometers"] can be degrees, radians, miles, inches, yards, metres,
+ * meters, kilometres, kilometers.
+ * @returns {number} distance
+ */
+function radiansToLength(radians, units) {
+    if (units === void 0) { units = "kilometers"; }
+    var factor = factors[units];
+    if (!factor) {
+        throw new Error(units + " units is invalid");
+    }
+    return radians * factor;
+}
+/**
+ * Convert a distance measurement (assuming a spherical Earth) from a real-world unit into radians
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ *
+ * @name lengthToRadians
+ * @param {number} distance in real units
+ * @param {string} [units="kilometers"] can be degrees, radians, miles, inches, yards, metres,
+ * meters, kilometres, kilometers.
+ * @returns {number} radians
+ */
+function lengthToRadians(distance, units) {
+    if (units === void 0) { units = "kilometers"; }
+    var factor = factors[units];
+    if (!factor) {
+        throw new Error(units + " units is invalid");
+    }
+    return distance / factor;
+}
+/**
+ * Convert a distance measurement (assuming a spherical Earth) from a real-world unit into degrees
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, centimeters, kilometres, feet
+ *
+ * @name lengthToDegrees
+ * @param {number} distance in real units
+ * @param {string} [units="kilometers"] can be degrees, radians, miles, inches, yards, metres,
+ * meters, kilometres, kilometers.
+ * @returns {number} degrees
+ */
+function lengthToDegrees(distance, units) {
+    return radiansToDegrees(lengthToRadians(distance, units));
+}
+/**
+ * Converts any bearing angle from the north line direction (positive clockwise)
+ * and returns an angle between 0-360 degrees (positive clockwise), 0 being the north line
+ *
+ * @name bearingToAzimuth
+ * @param {number} bearing angle, between -180 and +180 degrees
+ * @returns {number} angle between 0 and 360 degrees
+ */
+function bearingToAzimuth(bearing) {
+    var angle = bearing % 360;
+    if (angle < 0) {
+        angle += 360;
+    }
+    return angle;
+}
+/**
+ * Converts an angle in radians to degrees
+ *
+ * @name radiansToDegrees
+ * @param {number} radians angle in radians
+ * @returns {number} degrees between 0 and 360 degrees
+ */
+function radiansToDegrees(radians) {
+    var degrees = radians % (2 * Math.PI);
+    return (degrees * 180) / Math.PI;
+}
+/**
+ * Converts an angle in degrees to radians
+ *
+ * @name degreesToRadians
+ * @param {number} degrees angle between 0 and 360 degrees
+ * @returns {number} angle in radians
+ */
+function degreesToRadians(degrees) {
+    var radians = degrees % 360;
+    return (radians * Math.PI) / 180;
+}
+/**
+ * Converts a length to the requested unit.
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ *
+ * @param {number} length to be converted
+ * @param {Units} [originalUnit="kilometers"] of the length
+ * @param {Units} [finalUnit="kilometers"] returned unit
+ * @returns {number} the converted length
+ */
+function convertLength(length, originalUnit, finalUnit) {
+    if (originalUnit === void 0) { originalUnit = "kilometers"; }
+    if (finalUnit === void 0) { finalUnit = "kilometers"; }
+    if (!(length >= 0)) {
+        throw new Error("length must be a positive number");
+    }
+    return radiansToLength(lengthToRadians(length, originalUnit), finalUnit);
+}
+/**
+ * Converts a area to the requested unit.
+ * Valid units: kilometers, kilometres, meters, metres, centimetres, millimeters, acres, miles, yards, feet, inches, hectares
+ * @param {number} area to be converted
+ * @param {Units} [originalUnit="meters"] of the distance
+ * @param {Units} [finalUnit="kilometers"] returned unit
+ * @returns {number} the converted area
+ */
+function convertArea(area, originalUnit, finalUnit) {
+    if (originalUnit === void 0) { originalUnit = "meters"; }
+    if (finalUnit === void 0) { finalUnit = "kilometers"; }
+    if (!(area >= 0)) {
+        throw new Error("area must be a positive number");
+    }
+    var startFactor = areaFactors[originalUnit];
+    if (!startFactor) {
+        throw new Error("invalid original units");
+    }
+    var finalFactor = areaFactors[finalUnit];
+    if (!finalFactor) {
+        throw new Error("invalid final units");
+    }
+    return (area / startFactor) * finalFactor;
+}
+/**
+ * isNumber
+ *
+ * @param {*} num Number to validate
+ * @returns {boolean} true/false
+ * @example
+ * turf.isNumber(123)
+ * //=true
+ * turf.isNumber('foo')
+ * //=false
+ */
+function isNumber(num) {
+    return !isNaN(num) && num !== null && !Array.isArray(num);
+}
+/**
+ * isObject
+ *
+ * @param {*} input variable to validate
+ * @returns {boolean} true/false
+ * @example
+ * turf.isObject({elevation: 10})
+ * //=true
+ * turf.isObject('foo')
+ * //=false
+ */
+function isObject(input) {
+    return !!input && input.constructor === Object;
+}
+/**
+ * Validate BBox
+ *
+ * @private
+ * @param {Array<number>} bbox BBox to validate
+ * @returns {void}
+ * @throws Error if BBox is not valid
+ * @example
+ * validateBBox([-180, -40, 110, 50])
+ * //=OK
+ * validateBBox([-180, -40])
+ * //=Error
+ * validateBBox('Foo')
+ * //=Error
+ * validateBBox(5)
+ * //=Error
+ * validateBBox(null)
+ * //=Error
+ * validateBBox(undefined)
+ * //=Error
+ */
+function validateBBox(bbox) {
+    if (!bbox) {
+        throw new Error("bbox is required");
+    }
+    if (!Array.isArray(bbox)) {
+        throw new Error("bbox must be an Array");
+    }
+    if (bbox.length !== 4 && bbox.length !== 6) {
+        throw new Error("bbox must be an Array of 4 or 6 numbers");
+    }
+    bbox.forEach(function (num) {
+        if (!isNumber(num)) {
+            throw new Error("bbox must only contain numbers");
+        }
+    });
+}
+/**
+ * Validate Id
+ *
+ * @private
+ * @param {string|number} id Id to validate
+ * @returns {void}
+ * @throws Error if Id is not valid
+ * @example
+ * validateId([-180, -40, 110, 50])
+ * //=Error
+ * validateId([-180, -40])
+ * //=Error
+ * validateId('Foo')
+ * //=OK
+ * validateId(5)
+ * //=OK
+ * validateId(null)
+ * //=Error
+ * validateId(undefined)
+ * //=Error
+ */
+function validateId(id) {
+    if (!id) {
+        throw new Error("id is required");
+    }
+    if (["string", "number"].indexOf(typeof id) === -1) {
+        throw new Error("id must be a number or a string");
+    }
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/@turf/invariant/dist/es/index.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/@turf/invariant/dist/es/index.js ***!
+  \*******************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "getCoord": () => (/* binding */ getCoord),
+/* harmony export */   "getCoords": () => (/* binding */ getCoords),
+/* harmony export */   "containsNumber": () => (/* binding */ containsNumber),
+/* harmony export */   "geojsonType": () => (/* binding */ geojsonType),
+/* harmony export */   "featureOf": () => (/* binding */ featureOf),
+/* harmony export */   "collectionOf": () => (/* binding */ collectionOf),
+/* harmony export */   "getGeom": () => (/* binding */ getGeom),
+/* harmony export */   "getType": () => (/* binding */ getType)
+/* harmony export */ });
+/* harmony import */ var _turf_helpers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @turf/helpers */ "./node_modules/@turf/helpers/dist/es/index.js");
+
+/**
+ * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
+ *
+ * @name getCoord
+ * @param {Array<number>|Geometry<Point>|Feature<Point>} coord GeoJSON Point or an Array of numbers
+ * @returns {Array<number>} coordinates
+ * @example
+ * var pt = turf.point([10, 10]);
+ *
+ * var coord = turf.getCoord(pt);
+ * //= [10, 10]
+ */
+function getCoord(coord) {
+    if (!coord) {
+        throw new Error("coord is required");
+    }
+    if (!Array.isArray(coord)) {
+        if (coord.type === "Feature" &&
+            coord.geometry !== null &&
+            coord.geometry.type === "Point") {
+            return coord.geometry.coordinates;
+        }
+        if (coord.type === "Point") {
+            return coord.coordinates;
+        }
+    }
+    if (Array.isArray(coord) &&
+        coord.length >= 2 &&
+        !Array.isArray(coord[0]) &&
+        !Array.isArray(coord[1])) {
+        return coord;
+    }
+    throw new Error("coord must be GeoJSON Point or an Array of numbers");
+}
+/**
+ * Unwrap coordinates from a Feature, Geometry Object or an Array
+ *
+ * @name getCoords
+ * @param {Array<any>|Geometry|Feature} coords Feature, Geometry Object or an Array
+ * @returns {Array<any>} coordinates
+ * @example
+ * var poly = turf.polygon([[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]);
+ *
+ * var coords = turf.getCoords(poly);
+ * //= [[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]
+ */
+function getCoords(coords) {
+    if (Array.isArray(coords)) {
+        return coords;
+    }
+    // Feature
+    if (coords.type === "Feature") {
+        if (coords.geometry !== null) {
+            return coords.geometry.coordinates;
+        }
+    }
+    else {
+        // Geometry
+        if (coords.coordinates) {
+            return coords.coordinates;
+        }
+    }
+    throw new Error("coords must be GeoJSON Feature, Geometry Object or an Array");
+}
+/**
+ * Checks if coordinates contains a number
+ *
+ * @name containsNumber
+ * @param {Array<any>} coordinates GeoJSON Coordinates
+ * @returns {boolean} true if Array contains a number
+ */
+function containsNumber(coordinates) {
+    if (coordinates.length > 1 &&
+        (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.isNumber)(coordinates[0]) &&
+        (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.isNumber)(coordinates[1])) {
+        return true;
+    }
+    if (Array.isArray(coordinates[0]) && coordinates[0].length) {
+        return containsNumber(coordinates[0]);
+    }
+    throw new Error("coordinates must only contain numbers");
+}
+/**
+ * Enforce expectations about types of GeoJSON objects for Turf.
+ *
+ * @name geojsonType
+ * @param {GeoJSON} value any GeoJSON object
+ * @param {string} type expected GeoJSON type
+ * @param {string} name name of calling function
+ * @throws {Error} if value is not the expected type.
+ */
+function geojsonType(value, type, name) {
+    if (!type || !name) {
+        throw new Error("type and name required");
+    }
+    if (!value || value.type !== type) {
+        throw new Error("Invalid input to " +
+            name +
+            ": must be a " +
+            type +
+            ", given " +
+            value.type);
+    }
+}
+/**
+ * Enforce expectations about types of {@link Feature} inputs for Turf.
+ * Internally this uses {@link geojsonType} to judge geometry types.
+ *
+ * @name featureOf
+ * @param {Feature} feature a feature with an expected geometry type
+ * @param {string} type expected GeoJSON type
+ * @param {string} name name of calling function
+ * @throws {Error} error if value is not the expected type.
+ */
+function featureOf(feature, type, name) {
+    if (!feature) {
+        throw new Error("No feature passed");
+    }
+    if (!name) {
+        throw new Error(".featureOf() requires a name");
+    }
+    if (!feature || feature.type !== "Feature" || !feature.geometry) {
+        throw new Error("Invalid input to " + name + ", Feature with geometry required");
+    }
+    if (!feature.geometry || feature.geometry.type !== type) {
+        throw new Error("Invalid input to " +
+            name +
+            ": must be a " +
+            type +
+            ", given " +
+            feature.geometry.type);
+    }
+}
+/**
+ * Enforce expectations about types of {@link FeatureCollection} inputs for Turf.
+ * Internally this uses {@link geojsonType} to judge geometry types.
+ *
+ * @name collectionOf
+ * @param {FeatureCollection} featureCollection a FeatureCollection for which features will be judged
+ * @param {string} type expected GeoJSON type
+ * @param {string} name name of calling function
+ * @throws {Error} if value is not the expected type.
+ */
+function collectionOf(featureCollection, type, name) {
+    if (!featureCollection) {
+        throw new Error("No featureCollection passed");
+    }
+    if (!name) {
+        throw new Error(".collectionOf() requires a name");
+    }
+    if (!featureCollection || featureCollection.type !== "FeatureCollection") {
+        throw new Error("Invalid input to " + name + ", FeatureCollection required");
+    }
+    for (var _i = 0, _a = featureCollection.features; _i < _a.length; _i++) {
+        var feature = _a[_i];
+        if (!feature || feature.type !== "Feature" || !feature.geometry) {
+            throw new Error("Invalid input to " + name + ", Feature with geometry required");
+        }
+        if (!feature.geometry || feature.geometry.type !== type) {
+            throw new Error("Invalid input to " +
+                name +
+                ": must be a " +
+                type +
+                ", given " +
+                feature.geometry.type);
+        }
+    }
+}
+/**
+ * Get Geometry from Feature or Geometry Object
+ *
+ * @param {Feature|Geometry} geojson GeoJSON Feature or Geometry Object
+ * @returns {Geometry|null} GeoJSON Geometry Object
+ * @throws {Error} if geojson is not a Feature or Geometry Object
+ * @example
+ * var point = {
+ *   "type": "Feature",
+ *   "properties": {},
+ *   "geometry": {
+ *     "type": "Point",
+ *     "coordinates": [110, 40]
+ *   }
+ * }
+ * var geom = turf.getGeom(point)
+ * //={"type": "Point", "coordinates": [110, 40]}
+ */
+function getGeom(geojson) {
+    if (geojson.type === "Feature") {
+        return geojson.geometry;
+    }
+    return geojson;
+}
+/**
+ * Get GeoJSON object's type, Geometry type is prioritize.
+ *
+ * @param {GeoJSON} geojson GeoJSON object
+ * @param {string} [name="geojson"] name of the variable to display in error message (unused)
+ * @returns {string} GeoJSON type
+ * @example
+ * var point = {
+ *   "type": "Feature",
+ *   "properties": {},
+ *   "geometry": {
+ *     "type": "Point",
+ *     "coordinates": [110, 40]
+ *   }
+ * }
+ * var geom = turf.getType(point)
+ * //="Point"
+ */
+function getType(geojson, _name) {
+    if (geojson.type === "FeatureCollection") {
+        return "FeatureCollection";
+    }
+    if (geojson.type === "GeometryCollection") {
+        return "GeometryCollection";
+    }
+    if (geojson.type === "Feature" && geojson.geometry !== null) {
+        return geojson.geometry.type;
+    }
+    return geojson.type;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/@turf/meta/dist/es/index.js":
+/*!**************************************************!*\
+  !*** ./node_modules/@turf/meta/dist/es/index.js ***!
+  \**************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "coordAll": () => (/* binding */ coordAll),
+/* harmony export */   "coordEach": () => (/* binding */ coordEach),
+/* harmony export */   "coordReduce": () => (/* binding */ coordReduce),
+/* harmony export */   "featureEach": () => (/* binding */ featureEach),
+/* harmony export */   "featureReduce": () => (/* binding */ featureReduce),
+/* harmony export */   "findPoint": () => (/* binding */ findPoint),
+/* harmony export */   "findSegment": () => (/* binding */ findSegment),
+/* harmony export */   "flattenEach": () => (/* binding */ flattenEach),
+/* harmony export */   "flattenReduce": () => (/* binding */ flattenReduce),
+/* harmony export */   "geomEach": () => (/* binding */ geomEach),
+/* harmony export */   "geomReduce": () => (/* binding */ geomReduce),
+/* harmony export */   "lineEach": () => (/* binding */ lineEach),
+/* harmony export */   "lineReduce": () => (/* binding */ lineReduce),
+/* harmony export */   "propEach": () => (/* binding */ propEach),
+/* harmony export */   "propReduce": () => (/* binding */ propReduce),
+/* harmony export */   "segmentEach": () => (/* binding */ segmentEach),
+/* harmony export */   "segmentReduce": () => (/* binding */ segmentReduce)
+/* harmony export */ });
+/* harmony import */ var _turf_helpers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @turf/helpers */ "./node_modules/@turf/helpers/dist/es/index.js");
+
+
+/**
+ * Callback for coordEach
+ *
+ * @callback coordEachCallback
+ * @param {Array<number>} currentCoord The current coordinate being processed.
+ * @param {number} coordIndex The current index of the coordinate being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
+ * @param {number} geometryIndex The current index of the Geometry being processed.
+ */
+
+/**
+ * Iterate over coordinates in any GeoJSON object, similar to Array.forEach()
+ *
+ * @name coordEach
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (currentCoord, coordIndex, featureIndex, multiFeatureIndex)
+ * @param {boolean} [excludeWrapCoord=false] whether or not to include the final coordinate of LinearRings that wraps the ring in its iteration.
+ * @returns {void}
+ * @example
+ * var features = turf.featureCollection([
+ *   turf.point([26, 37], {"foo": "bar"}),
+ *   turf.point([36, 53], {"hello": "world"})
+ * ]);
+ *
+ * turf.coordEach(features, function (currentCoord, coordIndex, featureIndex, multiFeatureIndex, geometryIndex) {
+ *   //=currentCoord
+ *   //=coordIndex
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ *   //=geometryIndex
+ * });
+ */
+function coordEach(geojson, callback, excludeWrapCoord) {
+  // Handles null Geometry -- Skips this GeoJSON
+  if (geojson === null) return;
+  var j,
+    k,
+    l,
+    geometry,
+    stopG,
+    coords,
+    geometryMaybeCollection,
+    wrapShrink = 0,
+    coordIndex = 0,
+    isGeometryCollection,
+    type = geojson.type,
+    isFeatureCollection = type === "FeatureCollection",
+    isFeature = type === "Feature",
+    stop = isFeatureCollection ? geojson.features.length : 1;
+
+  // This logic may look a little weird. The reason why it is that way
+  // is because it's trying to be fast. GeoJSON supports multiple kinds
+  // of objects at its root: FeatureCollection, Features, Geometries.
+  // This function has the responsibility of handling all of them, and that
+  // means that some of the `for` loops you see below actually just don't apply
+  // to certain inputs. For instance, if you give this just a
+  // Point geometry, then both loops are short-circuited and all we do
+  // is gradually rename the input until it's called 'geometry'.
+  //
+  // This also aims to allocate as few resources as possible: just a
+  // few numbers and booleans, rather than any temporary arrays as would
+  // be required with the normalization approach.
+  for (var featureIndex = 0; featureIndex < stop; featureIndex++) {
+    geometryMaybeCollection = isFeatureCollection
+      ? geojson.features[featureIndex].geometry
+      : isFeature
+      ? geojson.geometry
+      : geojson;
+    isGeometryCollection = geometryMaybeCollection
+      ? geometryMaybeCollection.type === "GeometryCollection"
+      : false;
+    stopG = isGeometryCollection
+      ? geometryMaybeCollection.geometries.length
+      : 1;
+
+    for (var geomIndex = 0; geomIndex < stopG; geomIndex++) {
+      var multiFeatureIndex = 0;
+      var geometryIndex = 0;
+      geometry = isGeometryCollection
+        ? geometryMaybeCollection.geometries[geomIndex]
+        : geometryMaybeCollection;
+
+      // Handles null Geometry -- Skips this geometry
+      if (geometry === null) continue;
+      coords = geometry.coordinates;
+      var geomType = geometry.type;
+
+      wrapShrink =
+        excludeWrapCoord &&
+        (geomType === "Polygon" || geomType === "MultiPolygon")
+          ? 1
+          : 0;
+
+      switch (geomType) {
+        case null:
+          break;
+        case "Point":
+          if (
+            callback(
+              coords,
+              coordIndex,
+              featureIndex,
+              multiFeatureIndex,
+              geometryIndex
+            ) === false
+          )
+            return false;
+          coordIndex++;
+          multiFeatureIndex++;
+          break;
+        case "LineString":
+        case "MultiPoint":
+          for (j = 0; j < coords.length; j++) {
+            if (
+              callback(
+                coords[j],
+                coordIndex,
+                featureIndex,
+                multiFeatureIndex,
+                geometryIndex
+              ) === false
+            )
+              return false;
+            coordIndex++;
+            if (geomType === "MultiPoint") multiFeatureIndex++;
+          }
+          if (geomType === "LineString") multiFeatureIndex++;
+          break;
+        case "Polygon":
+        case "MultiLineString":
+          for (j = 0; j < coords.length; j++) {
+            for (k = 0; k < coords[j].length - wrapShrink; k++) {
+              if (
+                callback(
+                  coords[j][k],
+                  coordIndex,
+                  featureIndex,
+                  multiFeatureIndex,
+                  geometryIndex
+                ) === false
+              )
+                return false;
+              coordIndex++;
+            }
+            if (geomType === "MultiLineString") multiFeatureIndex++;
+            if (geomType === "Polygon") geometryIndex++;
+          }
+          if (geomType === "Polygon") multiFeatureIndex++;
+          break;
+        case "MultiPolygon":
+          for (j = 0; j < coords.length; j++) {
+            geometryIndex = 0;
+            for (k = 0; k < coords[j].length; k++) {
+              for (l = 0; l < coords[j][k].length - wrapShrink; l++) {
+                if (
+                  callback(
+                    coords[j][k][l],
+                    coordIndex,
+                    featureIndex,
+                    multiFeatureIndex,
+                    geometryIndex
+                  ) === false
+                )
+                  return false;
+                coordIndex++;
+              }
+              geometryIndex++;
+            }
+            multiFeatureIndex++;
+          }
+          break;
+        case "GeometryCollection":
+          for (j = 0; j < geometry.geometries.length; j++)
+            if (
+              coordEach(geometry.geometries[j], callback, excludeWrapCoord) ===
+              false
+            )
+              return false;
+          break;
+        default:
+          throw new Error("Unknown Geometry Type");
+      }
+    }
+  }
+}
+
+/**
+ * Callback for coordReduce
+ *
+ * The first time the callback function is called, the values provided as arguments depend
+ * on whether the reduce method has an initialValue argument.
+ *
+ * If an initialValue is provided to the reduce method:
+ *  - The previousValue argument is initialValue.
+ *  - The currentValue argument is the value of the first element present in the array.
+ *
+ * If an initialValue is not provided:
+ *  - The previousValue argument is the value of the first element present in the array.
+ *  - The currentValue argument is the value of the second element present in the array.
+ *
+ * @callback coordReduceCallback
+ * @param {*} previousValue The accumulated value previously returned in the last invocation
+ * of the callback, or initialValue, if supplied.
+ * @param {Array<number>} currentCoord The current coordinate being processed.
+ * @param {number} coordIndex The current index of the coordinate being processed.
+ * Starts at index 0, if an initialValue is provided, and at index 1 otherwise.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
+ * @param {number} geometryIndex The current index of the Geometry being processed.
+ */
+
+/**
+ * Reduce coordinates in any GeoJSON object, similar to Array.reduce()
+ *
+ * @name coordReduce
+ * @param {FeatureCollection|Geometry|Feature} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (previousValue, currentCoord, coordIndex)
+ * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
+ * @param {boolean} [excludeWrapCoord=false] whether or not to include the final coordinate of LinearRings that wraps the ring in its iteration.
+ * @returns {*} The value that results from the reduction.
+ * @example
+ * var features = turf.featureCollection([
+ *   turf.point([26, 37], {"foo": "bar"}),
+ *   turf.point([36, 53], {"hello": "world"})
+ * ]);
+ *
+ * turf.coordReduce(features, function (previousValue, currentCoord, coordIndex, featureIndex, multiFeatureIndex, geometryIndex) {
+ *   //=previousValue
+ *   //=currentCoord
+ *   //=coordIndex
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ *   //=geometryIndex
+ *   return currentCoord;
+ * });
+ */
+function coordReduce(geojson, callback, initialValue, excludeWrapCoord) {
+  var previousValue = initialValue;
+  coordEach(
+    geojson,
+    function (
+      currentCoord,
+      coordIndex,
+      featureIndex,
+      multiFeatureIndex,
+      geometryIndex
+    ) {
+      if (coordIndex === 0 && initialValue === undefined)
+        previousValue = currentCoord;
+      else
+        previousValue = callback(
+          previousValue,
+          currentCoord,
+          coordIndex,
+          featureIndex,
+          multiFeatureIndex,
+          geometryIndex
+        );
+    },
+    excludeWrapCoord
+  );
+  return previousValue;
+}
+
+/**
+ * Callback for propEach
+ *
+ * @callback propEachCallback
+ * @param {Object} currentProperties The current Properties being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ */
+
+/**
+ * Iterate over properties in any GeoJSON object, similar to Array.forEach()
+ *
+ * @name propEach
+ * @param {FeatureCollection|Feature} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (currentProperties, featureIndex)
+ * @returns {void}
+ * @example
+ * var features = turf.featureCollection([
+ *     turf.point([26, 37], {foo: 'bar'}),
+ *     turf.point([36, 53], {hello: 'world'})
+ * ]);
+ *
+ * turf.propEach(features, function (currentProperties, featureIndex) {
+ *   //=currentProperties
+ *   //=featureIndex
+ * });
+ */
+function propEach(geojson, callback) {
+  var i;
+  switch (geojson.type) {
+    case "FeatureCollection":
+      for (i = 0; i < geojson.features.length; i++) {
+        if (callback(geojson.features[i].properties, i) === false) break;
+      }
+      break;
+    case "Feature":
+      callback(geojson.properties, 0);
+      break;
+  }
+}
+
+/**
+ * Callback for propReduce
+ *
+ * The first time the callback function is called, the values provided as arguments depend
+ * on whether the reduce method has an initialValue argument.
+ *
+ * If an initialValue is provided to the reduce method:
+ *  - The previousValue argument is initialValue.
+ *  - The currentValue argument is the value of the first element present in the array.
+ *
+ * If an initialValue is not provided:
+ *  - The previousValue argument is the value of the first element present in the array.
+ *  - The currentValue argument is the value of the second element present in the array.
+ *
+ * @callback propReduceCallback
+ * @param {*} previousValue The accumulated value previously returned in the last invocation
+ * of the callback, or initialValue, if supplied.
+ * @param {*} currentProperties The current Properties being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ */
+
+/**
+ * Reduce properties in any GeoJSON object into a single value,
+ * similar to how Array.reduce works. However, in this case we lazily run
+ * the reduction, so an array of all properties is unnecessary.
+ *
+ * @name propReduce
+ * @param {FeatureCollection|Feature} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (previousValue, currentProperties, featureIndex)
+ * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
+ * @returns {*} The value that results from the reduction.
+ * @example
+ * var features = turf.featureCollection([
+ *     turf.point([26, 37], {foo: 'bar'}),
+ *     turf.point([36, 53], {hello: 'world'})
+ * ]);
+ *
+ * turf.propReduce(features, function (previousValue, currentProperties, featureIndex) {
+ *   //=previousValue
+ *   //=currentProperties
+ *   //=featureIndex
+ *   return currentProperties
+ * });
+ */
+function propReduce(geojson, callback, initialValue) {
+  var previousValue = initialValue;
+  propEach(geojson, function (currentProperties, featureIndex) {
+    if (featureIndex === 0 && initialValue === undefined)
+      previousValue = currentProperties;
+    else
+      previousValue = callback(previousValue, currentProperties, featureIndex);
+  });
+  return previousValue;
+}
+
+/**
+ * Callback for featureEach
+ *
+ * @callback featureEachCallback
+ * @param {Feature<any>} currentFeature The current Feature being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ */
+
+/**
+ * Iterate over features in any GeoJSON object, similar to
+ * Array.forEach.
+ *
+ * @name featureEach
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (currentFeature, featureIndex)
+ * @returns {void}
+ * @example
+ * var features = turf.featureCollection([
+ *   turf.point([26, 37], {foo: 'bar'}),
+ *   turf.point([36, 53], {hello: 'world'})
+ * ]);
+ *
+ * turf.featureEach(features, function (currentFeature, featureIndex) {
+ *   //=currentFeature
+ *   //=featureIndex
+ * });
+ */
+function featureEach(geojson, callback) {
+  if (geojson.type === "Feature") {
+    callback(geojson, 0);
+  } else if (geojson.type === "FeatureCollection") {
+    for (var i = 0; i < geojson.features.length; i++) {
+      if (callback(geojson.features[i], i) === false) break;
+    }
+  }
+}
+
+/**
+ * Callback for featureReduce
+ *
+ * The first time the callback function is called, the values provided as arguments depend
+ * on whether the reduce method has an initialValue argument.
+ *
+ * If an initialValue is provided to the reduce method:
+ *  - The previousValue argument is initialValue.
+ *  - The currentValue argument is the value of the first element present in the array.
+ *
+ * If an initialValue is not provided:
+ *  - The previousValue argument is the value of the first element present in the array.
+ *  - The currentValue argument is the value of the second element present in the array.
+ *
+ * @callback featureReduceCallback
+ * @param {*} previousValue The accumulated value previously returned in the last invocation
+ * of the callback, or initialValue, if supplied.
+ * @param {Feature} currentFeature The current Feature being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ */
+
+/**
+ * Reduce features in any GeoJSON object, similar to Array.reduce().
+ *
+ * @name featureReduce
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (previousValue, currentFeature, featureIndex)
+ * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
+ * @returns {*} The value that results from the reduction.
+ * @example
+ * var features = turf.featureCollection([
+ *   turf.point([26, 37], {"foo": "bar"}),
+ *   turf.point([36, 53], {"hello": "world"})
+ * ]);
+ *
+ * turf.featureReduce(features, function (previousValue, currentFeature, featureIndex) {
+ *   //=previousValue
+ *   //=currentFeature
+ *   //=featureIndex
+ *   return currentFeature
+ * });
+ */
+function featureReduce(geojson, callback, initialValue) {
+  var previousValue = initialValue;
+  featureEach(geojson, function (currentFeature, featureIndex) {
+    if (featureIndex === 0 && initialValue === undefined)
+      previousValue = currentFeature;
+    else previousValue = callback(previousValue, currentFeature, featureIndex);
+  });
+  return previousValue;
+}
+
+/**
+ * Get all coordinates from any GeoJSON object.
+ *
+ * @name coordAll
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @returns {Array<Array<number>>} coordinate position array
+ * @example
+ * var features = turf.featureCollection([
+ *   turf.point([26, 37], {foo: 'bar'}),
+ *   turf.point([36, 53], {hello: 'world'})
+ * ]);
+ *
+ * var coords = turf.coordAll(features);
+ * //= [[26, 37], [36, 53]]
+ */
+function coordAll(geojson) {
+  var coords = [];
+  coordEach(geojson, function (coord) {
+    coords.push(coord);
+  });
+  return coords;
+}
+
+/**
+ * Callback for geomEach
+ *
+ * @callback geomEachCallback
+ * @param {Geometry} currentGeometry The current Geometry being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {Object} featureProperties The current Feature Properties being processed.
+ * @param {Array<number>} featureBBox The current Feature BBox being processed.
+ * @param {number|string} featureId The current Feature Id being processed.
+ */
+
+/**
+ * Iterate over each geometry in any GeoJSON object, similar to Array.forEach()
+ *
+ * @name geomEach
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (currentGeometry, featureIndex, featureProperties, featureBBox, featureId)
+ * @returns {void}
+ * @example
+ * var features = turf.featureCollection([
+ *     turf.point([26, 37], {foo: 'bar'}),
+ *     turf.point([36, 53], {hello: 'world'})
+ * ]);
+ *
+ * turf.geomEach(features, function (currentGeometry, featureIndex, featureProperties, featureBBox, featureId) {
+ *   //=currentGeometry
+ *   //=featureIndex
+ *   //=featureProperties
+ *   //=featureBBox
+ *   //=featureId
+ * });
+ */
+function geomEach(geojson, callback) {
+  var i,
+    j,
+    g,
+    geometry,
+    stopG,
+    geometryMaybeCollection,
+    isGeometryCollection,
+    featureProperties,
+    featureBBox,
+    featureId,
+    featureIndex = 0,
+    isFeatureCollection = geojson.type === "FeatureCollection",
+    isFeature = geojson.type === "Feature",
+    stop = isFeatureCollection ? geojson.features.length : 1;
+
+  // This logic may look a little weird. The reason why it is that way
+  // is because it's trying to be fast. GeoJSON supports multiple kinds
+  // of objects at its root: FeatureCollection, Features, Geometries.
+  // This function has the responsibility of handling all of them, and that
+  // means that some of the `for` loops you see below actually just don't apply
+  // to certain inputs. For instance, if you give this just a
+  // Point geometry, then both loops are short-circuited and all we do
+  // is gradually rename the input until it's called 'geometry'.
+  //
+  // This also aims to allocate as few resources as possible: just a
+  // few numbers and booleans, rather than any temporary arrays as would
+  // be required with the normalization approach.
+  for (i = 0; i < stop; i++) {
+    geometryMaybeCollection = isFeatureCollection
+      ? geojson.features[i].geometry
+      : isFeature
+      ? geojson.geometry
+      : geojson;
+    featureProperties = isFeatureCollection
+      ? geojson.features[i].properties
+      : isFeature
+      ? geojson.properties
+      : {};
+    featureBBox = isFeatureCollection
+      ? geojson.features[i].bbox
+      : isFeature
+      ? geojson.bbox
+      : undefined;
+    featureId = isFeatureCollection
+      ? geojson.features[i].id
+      : isFeature
+      ? geojson.id
+      : undefined;
+    isGeometryCollection = geometryMaybeCollection
+      ? geometryMaybeCollection.type === "GeometryCollection"
+      : false;
+    stopG = isGeometryCollection
+      ? geometryMaybeCollection.geometries.length
+      : 1;
+
+    for (g = 0; g < stopG; g++) {
+      geometry = isGeometryCollection
+        ? geometryMaybeCollection.geometries[g]
+        : geometryMaybeCollection;
+
+      // Handle null Geometry
+      if (geometry === null) {
+        if (
+          callback(
+            null,
+            featureIndex,
+            featureProperties,
+            featureBBox,
+            featureId
+          ) === false
+        )
+          return false;
+        continue;
+      }
+      switch (geometry.type) {
+        case "Point":
+        case "LineString":
+        case "MultiPoint":
+        case "Polygon":
+        case "MultiLineString":
+        case "MultiPolygon": {
+          if (
+            callback(
+              geometry,
+              featureIndex,
+              featureProperties,
+              featureBBox,
+              featureId
+            ) === false
+          )
+            return false;
+          break;
+        }
+        case "GeometryCollection": {
+          for (j = 0; j < geometry.geometries.length; j++) {
+            if (
+              callback(
+                geometry.geometries[j],
+                featureIndex,
+                featureProperties,
+                featureBBox,
+                featureId
+              ) === false
+            )
+              return false;
+          }
+          break;
+        }
+        default:
+          throw new Error("Unknown Geometry Type");
+      }
+    }
+    // Only increase `featureIndex` per each feature
+    featureIndex++;
+  }
+}
+
+/**
+ * Callback for geomReduce
+ *
+ * The first time the callback function is called, the values provided as arguments depend
+ * on whether the reduce method has an initialValue argument.
+ *
+ * If an initialValue is provided to the reduce method:
+ *  - The previousValue argument is initialValue.
+ *  - The currentValue argument is the value of the first element present in the array.
+ *
+ * If an initialValue is not provided:
+ *  - The previousValue argument is the value of the first element present in the array.
+ *  - The currentValue argument is the value of the second element present in the array.
+ *
+ * @callback geomReduceCallback
+ * @param {*} previousValue The accumulated value previously returned in the last invocation
+ * of the callback, or initialValue, if supplied.
+ * @param {Geometry} currentGeometry The current Geometry being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {Object} featureProperties The current Feature Properties being processed.
+ * @param {Array<number>} featureBBox The current Feature BBox being processed.
+ * @param {number|string} featureId The current Feature Id being processed.
+ */
+
+/**
+ * Reduce geometry in any GeoJSON object, similar to Array.reduce().
+ *
+ * @name geomReduce
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (previousValue, currentGeometry, featureIndex, featureProperties, featureBBox, featureId)
+ * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
+ * @returns {*} The value that results from the reduction.
+ * @example
+ * var features = turf.featureCollection([
+ *     turf.point([26, 37], {foo: 'bar'}),
+ *     turf.point([36, 53], {hello: 'world'})
+ * ]);
+ *
+ * turf.geomReduce(features, function (previousValue, currentGeometry, featureIndex, featureProperties, featureBBox, featureId) {
+ *   //=previousValue
+ *   //=currentGeometry
+ *   //=featureIndex
+ *   //=featureProperties
+ *   //=featureBBox
+ *   //=featureId
+ *   return currentGeometry
+ * });
+ */
+function geomReduce(geojson, callback, initialValue) {
+  var previousValue = initialValue;
+  geomEach(
+    geojson,
+    function (
+      currentGeometry,
+      featureIndex,
+      featureProperties,
+      featureBBox,
+      featureId
+    ) {
+      if (featureIndex === 0 && initialValue === undefined)
+        previousValue = currentGeometry;
+      else
+        previousValue = callback(
+          previousValue,
+          currentGeometry,
+          featureIndex,
+          featureProperties,
+          featureBBox,
+          featureId
+        );
+    }
+  );
+  return previousValue;
+}
+
+/**
+ * Callback for flattenEach
+ *
+ * @callback flattenEachCallback
+ * @param {Feature} currentFeature The current flattened feature being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
+ */
+
+/**
+ * Iterate over flattened features in any GeoJSON object, similar to
+ * Array.forEach.
+ *
+ * @name flattenEach
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (currentFeature, featureIndex, multiFeatureIndex)
+ * @example
+ * var features = turf.featureCollection([
+ *     turf.point([26, 37], {foo: 'bar'}),
+ *     turf.multiPoint([[40, 30], [36, 53]], {hello: 'world'})
+ * ]);
+ *
+ * turf.flattenEach(features, function (currentFeature, featureIndex, multiFeatureIndex) {
+ *   //=currentFeature
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ * });
+ */
+function flattenEach(geojson, callback) {
+  geomEach(geojson, function (geometry, featureIndex, properties, bbox, id) {
+    // Callback for single geometry
+    var type = geometry === null ? null : geometry.type;
+    switch (type) {
+      case null:
+      case "Point":
+      case "LineString":
+      case "Polygon":
+        if (
+          callback(
+            (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.feature)(geometry, properties, { bbox: bbox, id: id }),
+            featureIndex,
+            0
+          ) === false
+        )
+          return false;
+        return;
+    }
+
+    var geomType;
+
+    // Callback for multi-geometry
+    switch (type) {
+      case "MultiPoint":
+        geomType = "Point";
+        break;
+      case "MultiLineString":
+        geomType = "LineString";
+        break;
+      case "MultiPolygon":
+        geomType = "Polygon";
+        break;
+    }
+
+    for (
+      var multiFeatureIndex = 0;
+      multiFeatureIndex < geometry.coordinates.length;
+      multiFeatureIndex++
+    ) {
+      var coordinate = geometry.coordinates[multiFeatureIndex];
+      var geom = {
+        type: geomType,
+        coordinates: coordinate,
+      };
+      if (
+        callback((0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.feature)(geom, properties), featureIndex, multiFeatureIndex) ===
+        false
+      )
+        return false;
+    }
+  });
+}
+
+/**
+ * Callback for flattenReduce
+ *
+ * The first time the callback function is called, the values provided as arguments depend
+ * on whether the reduce method has an initialValue argument.
+ *
+ * If an initialValue is provided to the reduce method:
+ *  - The previousValue argument is initialValue.
+ *  - The currentValue argument is the value of the first element present in the array.
+ *
+ * If an initialValue is not provided:
+ *  - The previousValue argument is the value of the first element present in the array.
+ *  - The currentValue argument is the value of the second element present in the array.
+ *
+ * @callback flattenReduceCallback
+ * @param {*} previousValue The accumulated value previously returned in the last invocation
+ * of the callback, or initialValue, if supplied.
+ * @param {Feature} currentFeature The current Feature being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
+ */
+
+/**
+ * Reduce flattened features in any GeoJSON object, similar to Array.reduce().
+ *
+ * @name flattenReduce
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (previousValue, currentFeature, featureIndex, multiFeatureIndex)
+ * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
+ * @returns {*} The value that results from the reduction.
+ * @example
+ * var features = turf.featureCollection([
+ *     turf.point([26, 37], {foo: 'bar'}),
+ *     turf.multiPoint([[40, 30], [36, 53]], {hello: 'world'})
+ * ]);
+ *
+ * turf.flattenReduce(features, function (previousValue, currentFeature, featureIndex, multiFeatureIndex) {
+ *   //=previousValue
+ *   //=currentFeature
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ *   return currentFeature
+ * });
+ */
+function flattenReduce(geojson, callback, initialValue) {
+  var previousValue = initialValue;
+  flattenEach(
+    geojson,
+    function (currentFeature, featureIndex, multiFeatureIndex) {
+      if (
+        featureIndex === 0 &&
+        multiFeatureIndex === 0 &&
+        initialValue === undefined
+      )
+        previousValue = currentFeature;
+      else
+        previousValue = callback(
+          previousValue,
+          currentFeature,
+          featureIndex,
+          multiFeatureIndex
+        );
+    }
+  );
+  return previousValue;
+}
+
+/**
+ * Callback for segmentEach
+ *
+ * @callback segmentEachCallback
+ * @param {Feature<LineString>} currentSegment The current Segment being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
+ * @param {number} geometryIndex The current index of the Geometry being processed.
+ * @param {number} segmentIndex The current index of the Segment being processed.
+ * @returns {void}
+ */
+
+/**
+ * Iterate over 2-vertex line segment in any GeoJSON object, similar to Array.forEach()
+ * (Multi)Point geometries do not contain segments therefore they are ignored during this operation.
+ *
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON
+ * @param {Function} callback a method that takes (currentSegment, featureIndex, multiFeatureIndex, geometryIndex, segmentIndex)
+ * @returns {void}
+ * @example
+ * var polygon = turf.polygon([[[-50, 5], [-40, -10], [-50, -10], [-40, 5], [-50, 5]]]);
+ *
+ * // Iterate over GeoJSON by 2-vertex segments
+ * turf.segmentEach(polygon, function (currentSegment, featureIndex, multiFeatureIndex, geometryIndex, segmentIndex) {
+ *   //=currentSegment
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ *   //=geometryIndex
+ *   //=segmentIndex
+ * });
+ *
+ * // Calculate the total number of segments
+ * var total = 0;
+ * turf.segmentEach(polygon, function () {
+ *     total++;
+ * });
+ */
+function segmentEach(geojson, callback) {
+  flattenEach(geojson, function (feature, featureIndex, multiFeatureIndex) {
+    var segmentIndex = 0;
+
+    // Exclude null Geometries
+    if (!feature.geometry) return;
+    // (Multi)Point geometries do not contain segments therefore they are ignored during this operation.
+    var type = feature.geometry.type;
+    if (type === "Point" || type === "MultiPoint") return;
+
+    // Generate 2-vertex line segments
+    var previousCoords;
+    var previousFeatureIndex = 0;
+    var previousMultiIndex = 0;
+    var prevGeomIndex = 0;
+    if (
+      coordEach(
+        feature,
+        function (
+          currentCoord,
+          coordIndex,
+          featureIndexCoord,
+          multiPartIndexCoord,
+          geometryIndex
+        ) {
+          // Simulating a meta.coordReduce() since `reduce` operations cannot be stopped by returning `false`
+          if (
+            previousCoords === undefined ||
+            featureIndex > previousFeatureIndex ||
+            multiPartIndexCoord > previousMultiIndex ||
+            geometryIndex > prevGeomIndex
+          ) {
+            previousCoords = currentCoord;
+            previousFeatureIndex = featureIndex;
+            previousMultiIndex = multiPartIndexCoord;
+            prevGeomIndex = geometryIndex;
+            segmentIndex = 0;
+            return;
+          }
+          var currentSegment = (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.lineString)(
+            [previousCoords, currentCoord],
+            feature.properties
+          );
+          if (
+            callback(
+              currentSegment,
+              featureIndex,
+              multiFeatureIndex,
+              geometryIndex,
+              segmentIndex
+            ) === false
+          )
+            return false;
+          segmentIndex++;
+          previousCoords = currentCoord;
+        }
+      ) === false
+    )
+      return false;
+  });
+}
+
+/**
+ * Callback for segmentReduce
+ *
+ * The first time the callback function is called, the values provided as arguments depend
+ * on whether the reduce method has an initialValue argument.
+ *
+ * If an initialValue is provided to the reduce method:
+ *  - The previousValue argument is initialValue.
+ *  - The currentValue argument is the value of the first element present in the array.
+ *
+ * If an initialValue is not provided:
+ *  - The previousValue argument is the value of the first element present in the array.
+ *  - The currentValue argument is the value of the second element present in the array.
+ *
+ * @callback segmentReduceCallback
+ * @param {*} previousValue The accumulated value previously returned in the last invocation
+ * of the callback, or initialValue, if supplied.
+ * @param {Feature<LineString>} currentSegment The current Segment being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
+ * @param {number} geometryIndex The current index of the Geometry being processed.
+ * @param {number} segmentIndex The current index of the Segment being processed.
+ */
+
+/**
+ * Reduce 2-vertex line segment in any GeoJSON object, similar to Array.reduce()
+ * (Multi)Point geometries do not contain segments therefore they are ignored during this operation.
+ *
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON
+ * @param {Function} callback a method that takes (previousValue, currentSegment, currentIndex)
+ * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
+ * @returns {void}
+ * @example
+ * var polygon = turf.polygon([[[-50, 5], [-40, -10], [-50, -10], [-40, 5], [-50, 5]]]);
+ *
+ * // Iterate over GeoJSON by 2-vertex segments
+ * turf.segmentReduce(polygon, function (previousSegment, currentSegment, featureIndex, multiFeatureIndex, geometryIndex, segmentIndex) {
+ *   //= previousSegment
+ *   //= currentSegment
+ *   //= featureIndex
+ *   //= multiFeatureIndex
+ *   //= geometryIndex
+ *   //= segmentIndex
+ *   return currentSegment
+ * });
+ *
+ * // Calculate the total number of segments
+ * var initialValue = 0
+ * var total = turf.segmentReduce(polygon, function (previousValue) {
+ *     previousValue++;
+ *     return previousValue;
+ * }, initialValue);
+ */
+function segmentReduce(geojson, callback, initialValue) {
+  var previousValue = initialValue;
+  var started = false;
+  segmentEach(
+    geojson,
+    function (
+      currentSegment,
+      featureIndex,
+      multiFeatureIndex,
+      geometryIndex,
+      segmentIndex
+    ) {
+      if (started === false && initialValue === undefined)
+        previousValue = currentSegment;
+      else
+        previousValue = callback(
+          previousValue,
+          currentSegment,
+          featureIndex,
+          multiFeatureIndex,
+          geometryIndex,
+          segmentIndex
+        );
+      started = true;
+    }
+  );
+  return previousValue;
+}
+
+/**
+ * Callback for lineEach
+ *
+ * @callback lineEachCallback
+ * @param {Feature<LineString>} currentLine The current LineString|LinearRing being processed
+ * @param {number} featureIndex The current index of the Feature being processed
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed
+ * @param {number} geometryIndex The current index of the Geometry being processed
+ */
+
+/**
+ * Iterate over line or ring coordinates in LineString, Polygon, MultiLineString, MultiPolygon Features or Geometries,
+ * similar to Array.forEach.
+ *
+ * @name lineEach
+ * @param {Geometry|Feature<LineString|Polygon|MultiLineString|MultiPolygon>} geojson object
+ * @param {Function} callback a method that takes (currentLine, featureIndex, multiFeatureIndex, geometryIndex)
+ * @example
+ * var multiLine = turf.multiLineString([
+ *   [[26, 37], [35, 45]],
+ *   [[36, 53], [38, 50], [41, 55]]
+ * ]);
+ *
+ * turf.lineEach(multiLine, function (currentLine, featureIndex, multiFeatureIndex, geometryIndex) {
+ *   //=currentLine
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ *   //=geometryIndex
+ * });
+ */
+function lineEach(geojson, callback) {
+  // validation
+  if (!geojson) throw new Error("geojson is required");
+
+  flattenEach(geojson, function (feature, featureIndex, multiFeatureIndex) {
+    if (feature.geometry === null) return;
+    var type = feature.geometry.type;
+    var coords = feature.geometry.coordinates;
+    switch (type) {
+      case "LineString":
+        if (callback(feature, featureIndex, multiFeatureIndex, 0, 0) === false)
+          return false;
+        break;
+      case "Polygon":
+        for (
+          var geometryIndex = 0;
+          geometryIndex < coords.length;
+          geometryIndex++
+        ) {
+          if (
+            callback(
+              (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.lineString)(coords[geometryIndex], feature.properties),
+              featureIndex,
+              multiFeatureIndex,
+              geometryIndex
+            ) === false
+          )
+            return false;
+        }
+        break;
+    }
+  });
+}
+
+/**
+ * Callback for lineReduce
+ *
+ * The first time the callback function is called, the values provided as arguments depend
+ * on whether the reduce method has an initialValue argument.
+ *
+ * If an initialValue is provided to the reduce method:
+ *  - The previousValue argument is initialValue.
+ *  - The currentValue argument is the value of the first element present in the array.
+ *
+ * If an initialValue is not provided:
+ *  - The previousValue argument is the value of the first element present in the array.
+ *  - The currentValue argument is the value of the second element present in the array.
+ *
+ * @callback lineReduceCallback
+ * @param {*} previousValue The accumulated value previously returned in the last invocation
+ * of the callback, or initialValue, if supplied.
+ * @param {Feature<LineString>} currentLine The current LineString|LinearRing being processed.
+ * @param {number} featureIndex The current index of the Feature being processed
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed
+ * @param {number} geometryIndex The current index of the Geometry being processed
+ */
+
+/**
+ * Reduce features in any GeoJSON object, similar to Array.reduce().
+ *
+ * @name lineReduce
+ * @param {Geometry|Feature<LineString|Polygon|MultiLineString|MultiPolygon>} geojson object
+ * @param {Function} callback a method that takes (previousValue, currentLine, featureIndex, multiFeatureIndex, geometryIndex)
+ * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
+ * @returns {*} The value that results from the reduction.
+ * @example
+ * var multiPoly = turf.multiPolygon([
+ *   turf.polygon([[[12,48],[2,41],[24,38],[12,48]], [[9,44],[13,41],[13,45],[9,44]]]),
+ *   turf.polygon([[[5, 5], [0, 0], [2, 2], [4, 4], [5, 5]]])
+ * ]);
+ *
+ * turf.lineReduce(multiPoly, function (previousValue, currentLine, featureIndex, multiFeatureIndex, geometryIndex) {
+ *   //=previousValue
+ *   //=currentLine
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ *   //=geometryIndex
+ *   return currentLine
+ * });
+ */
+function lineReduce(geojson, callback, initialValue) {
+  var previousValue = initialValue;
+  lineEach(
+    geojson,
+    function (currentLine, featureIndex, multiFeatureIndex, geometryIndex) {
+      if (featureIndex === 0 && initialValue === undefined)
+        previousValue = currentLine;
+      else
+        previousValue = callback(
+          previousValue,
+          currentLine,
+          featureIndex,
+          multiFeatureIndex,
+          geometryIndex
+        );
+    }
+  );
+  return previousValue;
+}
+
+/**
+ * Finds a particular 2-vertex LineString Segment from a GeoJSON using `@turf/meta` indexes.
+ *
+ * Negative indexes are permitted.
+ * Point & MultiPoint will always return null.
+ *
+ * @param {FeatureCollection|Feature|Geometry} geojson Any GeoJSON Feature or Geometry
+ * @param {Object} [options={}] Optional parameters
+ * @param {number} [options.featureIndex=0] Feature Index
+ * @param {number} [options.multiFeatureIndex=0] Multi-Feature Index
+ * @param {number} [options.geometryIndex=0] Geometry Index
+ * @param {number} [options.segmentIndex=0] Segment Index
+ * @param {Object} [options.properties={}] Translate Properties to output LineString
+ * @param {BBox} [options.bbox={}] Translate BBox to output LineString
+ * @param {number|string} [options.id={}] Translate Id to output LineString
+ * @returns {Feature<LineString>} 2-vertex GeoJSON Feature LineString
+ * @example
+ * var multiLine = turf.multiLineString([
+ *     [[10, 10], [50, 30], [30, 40]],
+ *     [[-10, -10], [-50, -30], [-30, -40]]
+ * ]);
+ *
+ * // First Segment (defaults are 0)
+ * turf.findSegment(multiLine);
+ * // => Feature<LineString<[[10, 10], [50, 30]]>>
+ *
+ * // First Segment of 2nd Multi Feature
+ * turf.findSegment(multiLine, {multiFeatureIndex: 1});
+ * // => Feature<LineString<[[-10, -10], [-50, -30]]>>
+ *
+ * // Last Segment of Last Multi Feature
+ * turf.findSegment(multiLine, {multiFeatureIndex: -1, segmentIndex: -1});
+ * // => Feature<LineString<[[-50, -30], [-30, -40]]>>
+ */
+function findSegment(geojson, options) {
+  // Optional Parameters
+  options = options || {};
+  if (!(0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.isObject)(options)) throw new Error("options is invalid");
+  var featureIndex = options.featureIndex || 0;
+  var multiFeatureIndex = options.multiFeatureIndex || 0;
+  var geometryIndex = options.geometryIndex || 0;
+  var segmentIndex = options.segmentIndex || 0;
+
+  // Find FeatureIndex
+  var properties = options.properties;
+  var geometry;
+
+  switch (geojson.type) {
+    case "FeatureCollection":
+      if (featureIndex < 0)
+        featureIndex = geojson.features.length + featureIndex;
+      properties = properties || geojson.features[featureIndex].properties;
+      geometry = geojson.features[featureIndex].geometry;
+      break;
+    case "Feature":
+      properties = properties || geojson.properties;
+      geometry = geojson.geometry;
+      break;
+    case "Point":
+    case "MultiPoint":
+      return null;
+    case "LineString":
+    case "Polygon":
+    case "MultiLineString":
+    case "MultiPolygon":
+      geometry = geojson;
+      break;
+    default:
+      throw new Error("geojson is invalid");
+  }
+
+  // Find SegmentIndex
+  if (geometry === null) return null;
+  var coords = geometry.coordinates;
+  switch (geometry.type) {
+    case "Point":
+    case "MultiPoint":
+      return null;
+    case "LineString":
+      if (segmentIndex < 0) segmentIndex = coords.length + segmentIndex - 1;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.lineString)(
+        [coords[segmentIndex], coords[segmentIndex + 1]],
+        properties,
+        options
+      );
+    case "Polygon":
+      if (geometryIndex < 0) geometryIndex = coords.length + geometryIndex;
+      if (segmentIndex < 0)
+        segmentIndex = coords[geometryIndex].length + segmentIndex - 1;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.lineString)(
+        [
+          coords[geometryIndex][segmentIndex],
+          coords[geometryIndex][segmentIndex + 1],
+        ],
+        properties,
+        options
+      );
+    case "MultiLineString":
+      if (multiFeatureIndex < 0)
+        multiFeatureIndex = coords.length + multiFeatureIndex;
+      if (segmentIndex < 0)
+        segmentIndex = coords[multiFeatureIndex].length + segmentIndex - 1;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.lineString)(
+        [
+          coords[multiFeatureIndex][segmentIndex],
+          coords[multiFeatureIndex][segmentIndex + 1],
+        ],
+        properties,
+        options
+      );
+    case "MultiPolygon":
+      if (multiFeatureIndex < 0)
+        multiFeatureIndex = coords.length + multiFeatureIndex;
+      if (geometryIndex < 0)
+        geometryIndex = coords[multiFeatureIndex].length + geometryIndex;
+      if (segmentIndex < 0)
+        segmentIndex =
+          coords[multiFeatureIndex][geometryIndex].length - segmentIndex - 1;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.lineString)(
+        [
+          coords[multiFeatureIndex][geometryIndex][segmentIndex],
+          coords[multiFeatureIndex][geometryIndex][segmentIndex + 1],
+        ],
+        properties,
+        options
+      );
+  }
+  throw new Error("geojson is invalid");
+}
+
+/**
+ * Finds a particular Point from a GeoJSON using `@turf/meta` indexes.
+ *
+ * Negative indexes are permitted.
+ *
+ * @param {FeatureCollection|Feature|Geometry} geojson Any GeoJSON Feature or Geometry
+ * @param {Object} [options={}] Optional parameters
+ * @param {number} [options.featureIndex=0] Feature Index
+ * @param {number} [options.multiFeatureIndex=0] Multi-Feature Index
+ * @param {number} [options.geometryIndex=0] Geometry Index
+ * @param {number} [options.coordIndex=0] Coord Index
+ * @param {Object} [options.properties={}] Translate Properties to output Point
+ * @param {BBox} [options.bbox={}] Translate BBox to output Point
+ * @param {number|string} [options.id={}] Translate Id to output Point
+ * @returns {Feature<Point>} 2-vertex GeoJSON Feature Point
+ * @example
+ * var multiLine = turf.multiLineString([
+ *     [[10, 10], [50, 30], [30, 40]],
+ *     [[-10, -10], [-50, -30], [-30, -40]]
+ * ]);
+ *
+ * // First Segment (defaults are 0)
+ * turf.findPoint(multiLine);
+ * // => Feature<Point<[10, 10]>>
+ *
+ * // First Segment of the 2nd Multi-Feature
+ * turf.findPoint(multiLine, {multiFeatureIndex: 1});
+ * // => Feature<Point<[-10, -10]>>
+ *
+ * // Last Segment of last Multi-Feature
+ * turf.findPoint(multiLine, {multiFeatureIndex: -1, coordIndex: -1});
+ * // => Feature<Point<[-30, -40]>>
+ */
+function findPoint(geojson, options) {
+  // Optional Parameters
+  options = options || {};
+  if (!(0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.isObject)(options)) throw new Error("options is invalid");
+  var featureIndex = options.featureIndex || 0;
+  var multiFeatureIndex = options.multiFeatureIndex || 0;
+  var geometryIndex = options.geometryIndex || 0;
+  var coordIndex = options.coordIndex || 0;
+
+  // Find FeatureIndex
+  var properties = options.properties;
+  var geometry;
+
+  switch (geojson.type) {
+    case "FeatureCollection":
+      if (featureIndex < 0)
+        featureIndex = geojson.features.length + featureIndex;
+      properties = properties || geojson.features[featureIndex].properties;
+      geometry = geojson.features[featureIndex].geometry;
+      break;
+    case "Feature":
+      properties = properties || geojson.properties;
+      geometry = geojson.geometry;
+      break;
+    case "Point":
+    case "MultiPoint":
+      return null;
+    case "LineString":
+    case "Polygon":
+    case "MultiLineString":
+    case "MultiPolygon":
+      geometry = geojson;
+      break;
+    default:
+      throw new Error("geojson is invalid");
+  }
+
+  // Find Coord Index
+  if (geometry === null) return null;
+  var coords = geometry.coordinates;
+  switch (geometry.type) {
+    case "Point":
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)(coords, properties, options);
+    case "MultiPoint":
+      if (multiFeatureIndex < 0)
+        multiFeatureIndex = coords.length + multiFeatureIndex;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)(coords[multiFeatureIndex], properties, options);
+    case "LineString":
+      if (coordIndex < 0) coordIndex = coords.length + coordIndex;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)(coords[coordIndex], properties, options);
+    case "Polygon":
+      if (geometryIndex < 0) geometryIndex = coords.length + geometryIndex;
+      if (coordIndex < 0)
+        coordIndex = coords[geometryIndex].length + coordIndex;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)(coords[geometryIndex][coordIndex], properties, options);
+    case "MultiLineString":
+      if (multiFeatureIndex < 0)
+        multiFeatureIndex = coords.length + multiFeatureIndex;
+      if (coordIndex < 0)
+        coordIndex = coords[multiFeatureIndex].length + coordIndex;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)(coords[multiFeatureIndex][coordIndex], properties, options);
+    case "MultiPolygon":
+      if (multiFeatureIndex < 0)
+        multiFeatureIndex = coords.length + multiFeatureIndex;
+      if (geometryIndex < 0)
+        geometryIndex = coords[multiFeatureIndex].length + geometryIndex;
+      if (coordIndex < 0)
+        coordIndex =
+          coords[multiFeatureIndex][geometryIndex].length - coordIndex;
+      return (0,_turf_helpers__WEBPACK_IMPORTED_MODULE_0__.point)(
+        coords[multiFeatureIndex][geometryIndex][coordIndex],
+        properties,
+        options
+      );
+  }
+  throw new Error("geojson is invalid");
+}
+
+
+
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+/*!***********************************!*\
+  !*** ./Resources/Scripts/init.ts ***!
+  \***********************************/
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const navigation_1 = __webpack_require__(/*! ./navigation */ "./Resources/Scripts/navigation.ts");
+const map_1 = __webpack_require__(/*! ./map */ "./Resources/Scripts/map.ts");
+const boxAnim_1 = __webpack_require__(/*! ./boxAnim */ "./Resources/Scripts/boxAnim.ts");
+const year_1 = __webpack_require__(/*! ./year */ "./Resources/Scripts/year.ts");
+document.addEventListener("DOMContentLoaded", function () {
+    (0, navigation_1.initNav)();
+    (0, boxAnim_1.initAnim)();
+    (0, map_1.initMap)();
+    (0, year_1.setCurentYear)();
+});
+
+})();
+
+/******/ })()
+;
+//# sourceMappingURL=init.js.map
