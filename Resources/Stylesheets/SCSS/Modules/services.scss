@@ -46,6 +46,32 @@
       --column-gap: #{$gap-xl};
     }
 
+    ul {
+      padding-left: var(--gap-xl);
+      margin-bottom: var(--gap-xxl);
+      @include res-min-mobile-l {
+        padding-left: var(--gap-xxl);
+      }
+
+      > li {
+        font-family: var(--font-title);
+        font-size: x-large;
+        line-height: 1.4;
+        &::marker {
+          margin: 0 0.5rem 0 0;
+          font-size: var(--gap-l);
+          color: var(--color-primary);
+        }
+      }
+    }
+
+    img {
+      @include res-max-desktop-m {
+        width: 100%;
+        max-width: 320px;
+      }
+    }
+
     h3 {
       margin-bottom: var(--gap);
       font-size: 2rem;
