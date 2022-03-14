@@ -1383,7 +1383,7 @@ div[style*="color: rgb(0, 0, 0);"]:before {
         line-height: 1.4; }
         .services__content ul li::marker {
           margin: 0 0.5rem 0 0;
-          font-size: var(--gap-l);
+          font-size: 2rem;
           color: var(--color-primary); }
     @media only screen and (max-width: 1366px) {
       .services__content img {
