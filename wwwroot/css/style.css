@@ -1402,6 +1402,16 @@ div[style*="color: rgb(0, 0, 0);"]:before {
       .services__content p a {
         font-weight: bold;
         color: inherit; }
+    .services__content .img-wrapper {
+      --radius:2.4rem;
+      --color-box-shadow: rgba(0, 0, 0, 0.17);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 0 20px 0 var(--color-box-shadow); }
+      .services__content .img-wrapper:hover {
+        --color-box-shadow: rgba(0, 0, 0, 0.17); }
+      .services__content .img-wrapper > picture {
+        display: flex; }
     .services__content--column {
       --column: 1fr; }
     .services__content--reverse {
