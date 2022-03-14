@@ -53,10 +53,11 @@
         padding-left: var(--gap-xxl);
       }
 
-      > li {
+      li {
         font-family: var(--font-title);
         font-size: x-large;
         line-height: 1.4;
+
         &::marker {
           margin: 0 0.5rem 0 0;
           font-size: var(--gap-l);
