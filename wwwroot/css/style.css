@@ -766,25 +766,17 @@ small {
   .footer a {
     color: var(--color-black); }
 
+@property --angle {
+  inherits: false;
+  initial-value: 0deg;
+  syntax: "<angle>"; }
+
 .header {
   --anim-length: 0.7s;
   --anim-delay: calc(var(--anim-length) / 2);
   position: relative;
   height: 100vh;
   max-height: 2160px; }
-  .header:after {
-    position: absolute;
-    top: 0;
-    right: -2px;
-    display: block;
-    content: "";
-    width: 51%;
-    height: 100%;
-    background-image: image-set("../images/backgrounds/header_bg.png" 1x, "../images/backgrounds/header_bg.png" 2x);
-    background-image: image-set("../images/backgrounds/header_bg.webp" 1x, "../images/backgrounds/header_bg.webp" 2x);
-    background-repeat: no-repeat;
-    background-position: right;
-    background-size: cover; }
   .header__container {
     --container-max-width: 1366px;
     --col-count: 2;
@@ -865,6 +857,93 @@ small {
         margin-top: 0.7em;
         opacity: 0;
         animation: showButton var(--anim-length) calc(var(--anim-length) + var(--anim-delay)) linear forwards; }
+  .header__bg {
+    display: grid;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr); }
+    .header__bg div {
+      display: block;
+      border: 1px solid red;
+      transform: scale(0, 0); }
+      .header__bg div:nth-child(1) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(1s / 2)); }
+      .header__bg div:nth-child(2) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(2s / 2)); }
+      .header__bg div:nth-child(3) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(3s / 2)); }
+      .header__bg div:nth-child(4) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(4s / 2)); }
+      .header__bg div:nth-child(5) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(5s / 2)); }
+      .header__bg div:nth-child(6) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(6s / 2)); }
+      .header__bg div:nth-child(7) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(7s / 2)); }
+      .header__bg div:nth-child(8) {
+        animation: showUpGradually 0.65s forwards linear;
+        animation-delay: calc(-0.5s + calc(8s / 2)); }
+      .header__bg div:nth-of-type(1) {
+        grid-area: 1 / 3 / 2 / 5; }
+      .header__bg div:nth-of-type(2) {
+        grid-area: 2 / 4 / 3 / 5; }
+      .header__bg div:nth-of-type(3) {
+        grid-area: 3 / 4 / 4 / 5; }
+      .header__bg div:nth-of-type(4) {
+        grid-area: 4 / 3 / 5 / 5; }
+      .header__bg div:nth-of-type(5) {
+        grid-area: 4 / 1 / 5 / 3; }
+      .header__bg div:nth-of-type(6) {
+        grid-area: 3 / 1 / 4 / 2; }
+      .header__bg div:nth-of-type(7) {
+        grid-area: 2 / 1 / 3 / 2; }
+      .header__bg div:nth-of-type(8) {
+        grid-area: 1 / 1 / 2 / 3; }
+      .header__bg div:nth-of-type(9) {
+        --anim-time: 4s;
+        position: relative;
+        aspect-ratio: 1 / 1;
+        background-image: conic-gradient(rgba(0, 0, 0, 0) var(--angle), black var(--angle), black 360deg);
+        border: 2px solid black;
+        border-radius: 50%;
+        animation: showGradually var(--anim-time) forwards linear;
+        transform: scale(1, 1);
+        grid-area: 2 / 2 / 4 / 4; }
+        .header__bg div:nth-of-type(9):after {
+          display: block;
+          content: "";
+          width: 100%;
+          height: 100%;
+          background-image: url("../images/backgrounds/bg-circle.png");
+          background-repeat: no-repeat;
+          background-position: center;
+          background-size: contain;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-50%); }
+
+@keyframes showGradually {
+  from {
+    --angle: 0deg; }
+  to {
+    --angle: 360deg; } }
+
+@keyframes showUpGradually {
+  from {
+    transform: scale(0, 0); }
+  85% {
+    transform: scale(1.1, 1.1); }
+  to {
+    transform: scale(1, 1); } }
 
 @keyframes showRight {
   from {
