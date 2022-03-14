@@ -94,6 +94,10 @@
       }
     }
 
+    &--column {
+      --column: 1fr;      
+    }
+
     &--reverse {
       --column: 1fr;
       @include res-min-tablet {

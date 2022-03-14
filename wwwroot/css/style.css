@@ -1402,6 +1402,8 @@ div[style*="color: rgb(0, 0, 0);"]:before {
       .services__content p a {
         font-weight: bold;
         color: inherit; }
+    .services__content--column {
+      --column: 1fr; }
     .services__content--reverse {
       --column: 1fr; }
       @media only screen and (min-width: 769px) {
