@@ -856,7 +856,7 @@ small {
       .header__content > p + div {
         margin-top: 0.7em;
         opacity: 0;
-        animation: showButton var(--anim-length) calc(var(--anim-length) + var(--anim-delay)) linear forwards; }
+        animation: showOpacity var(--anim-length) calc(var(--anim-length) + var(--anim-delay)) linear forwards; }
   .header__bg {
     display: grid;
     background-image: url("../images/backgrounds/bg-circle.png");
@@ -974,6 +974,23 @@ small {
         z-index: 0;
         grid-area: 2 / 2 / 4 / 4;
         /* Desktop & Mobile Safari + Firefox */ }
+        .header__bg div:nth-of-type(9)::before {
+          --anim-time: 1s;
+          display: block;
+          content: "";
+          width: 100px;
+          height: 100px;
+          background-image: url("../images/logos/logo.svg");
+          background-repeat: no-repeat;
+          background-position: center center;
+          background-size: cover;
+          opacity: 0;
+          animation: showOpacity var(--anim-time) forwards linear;
+          animation-delay: 4.5s;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-50%); }
         .header__bg div:nth-of-type(9):after {
           position: absolute;
           top: 50%;
@@ -1034,7 +1051,7 @@ small {
     opacity: 1;
     transform: translateY(0); } }
 
-@keyframes showButton {
+@keyframes showOpacity {
   from {
     opacity: 0; }
   to {
