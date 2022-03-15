@@ -13,27 +13,6 @@
   height: 100vh;
   max-height: $height-4k;
 
-  // &:after {
-  //   position: absolute;
-  //   top: 0;
-  //   right: -2px;
-  //   display: block;
-  //   content: "";
-  //   width: 51%;
-  //   height: 100%;
-  //   background-image: image-set(
-  //     "../images/backgrounds/header_bg.png" 1x,
-  //     "../images/backgrounds/header_bg.png" 2x
-  //   );
-  //   background-image: image-set(
-  //     "../images/backgrounds/header_bg.webp" 1x,
-  //     "../images/backgrounds/header_bg.webp" 2x
-  //   );
-  //   background-repeat: no-repeat;
-  //   background-position: right;
-  //   background-size: cover;
-  // }
-
   &__container {
     --container-max-width: #{$width-desktop-m};
     --col-count: 2;
@@ -167,7 +146,7 @@
         grid-area: 4 / 3 / 5 / 5;
       }
       &:nth-of-type(5) {
-        --text-transform-y: -233%;
+        --text-transform-y: -238%;
         --text-transform-x: -27%;
         grid-area: 4 / 1 / 5 / 3;
       }
@@ -200,11 +179,25 @@
           content: "";
           width: 140%;
           aspect-ratio: 1 / 1;
-          background-image: conic-gradient(hsla(0, 0%, 0%, 0) var(--angle), $color-white var(--angle), $color-white 360deg);
+          background-image: conic-gradient(
+            hsla(0, 0%, 0%, 0) var(--angle),
+            var(color-white) var(--angle),
+            var(color-white) 360deg
+          );
+          background-color: var(--color-white);
           border-radius: 50%;
           animation: showGradually var(--anim-time) forwards linear;
         }
+
+        /* Desktop & Mobile Safari + Firefox */
+        // @supports (-webkit-touch-callout: none) or (selector(:nth-child(1 of x))) or (-moz-appearance: none) {
+        //   &:after {
+        //     background-color: var(--color-white);
+        //     animation: hideOpacity var(--anim-time) forwards linear;
+        //   }
+        // }
       }
+
       > p {
         @include center-item(50%, 50%, var(--text-transform-x), var(--text-transform-y));
         min-width: 16rem;
@@ -216,13 +209,6 @@
     }
   }
 }
-
-/* Desktop & Mobile Safari + Firefox */
-//  @supports (-webkit-touch-callout: none) or (selector(:nth-child(1 of x))) or (-moz-appearance: none) {
-//  	body {
-//bg white z opacity 1 na 0
-//  	}
-//  }
 
 @keyframes showGradually {
   from {
@@ -247,29 +233,29 @@
   }
 }
 
-@keyframes showRight {
-  from {
-    opacity: 0;
-    transform: translate(4rem, 0);
-  }
+// @keyframes showRight {
+//   from {
+//     opacity: 0;
+//     transform: translate(4rem, 0);
+//   }
 
-  to {
-    opacity: 1;
-    transform: translate(0);
-  }
-}
+//   to {
+//     opacity: 1;
+//     transform: translate(0);
+//   }
+// }
 
-@keyframes showImage {
-  from {
-    opacity: 0;
-    transform: scale(0.9, 0.9);
-  }
+// @keyframes showImage {
+//   from {
+//     opacity: 0;
+//     transform: scale(0.9, 0.9);
+//   }
 
-  to {
-    opacity: 1;
-    transform: scale(1, 1);
-  }
-}
+//   to {
+//     opacity: 1;
+//     transform: scale(1, 1);
+//   }
+// }
 
 @keyframes showUp {
   from {
@@ -289,5 +275,14 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes hideOpacity {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
