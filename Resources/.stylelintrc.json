@@ -57,6 +57,7 @@
         "background-position",
         "background-origin",
         "background-color",
+        "background-size",
         "background-attachment",
         "backface-visibility",
         "opacity",
