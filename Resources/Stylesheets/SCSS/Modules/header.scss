@@ -15,7 +15,6 @@
 
   &__container {
     --container-max-width: #{$width-desktop-m};
-    //--col-count: 2;
     --columns: 5fr 8fr;
     --container-padding-x: 0;
     position: relative;
@@ -25,8 +24,8 @@
     padding: 0 var(--container-padding-x);
     margin: 0 auto;
     z-index: 10;
-    //@include grid-columns(def, repeat(var(--col-count), minmax($gap-l, 1fr)), 0, stretch, center, stretch);
     @include grid-columns(def, var(--columns), 0, stretch, center, stretch);
+
     @include res-max-desktop-m {
       --container-max-width: 90%;
     }
@@ -37,13 +36,12 @@
     }
 
     @include res-max-tablet {
+      --columns: 5fr 8fr;
       --container-padding-x: #{$gap-l};
     }
 
-    @include res-max-mobile-l {
-      //--col-count: 1;
+    @media only screen and (max-width: 767px) {
       --columns: 1fr;
-      --container-padding-x: #{$gap-l};
     }
   }
 
@@ -67,7 +65,7 @@
 
     @include res-max-mobile-l {
       --content-font-size: 5rem;
-      --padding-top: var(--nav-height);
+      --padding-top: 7rem;
       --justify-content: flex-start;
     }
 
@@ -81,6 +79,9 @@
       animation: showUp var(--anim-length) linear forwards;
       transform: translateY(1rem);
       z-index: 1;
+      @media only screen and (max-width: 767px) {
+        font-size: 0.9em;
+      }
     }
 
     > p {
@@ -95,10 +96,19 @@
         line-height: 1.4;
       }
 
+      br {
+        @media only screen and (max-width: 767px) {
+          display: none;
+        }
+      }
+
       + div {
         margin-top: 0.7em;
         opacity: 0;
         animation: showOpacity var(--anim-length) calc(var(--anim-length) + var(--anim-delay)) linear forwards;
+        @media only screen and (max-width: 767px) {
+          margin-top: 0.4em;
+        }
       }
     }
   }
@@ -125,6 +135,14 @@
     }
     @include res-max-tablet {
       transform: scale(0.7, 0.7);
+    }
+    @media only screen and (max-width: 767px) {
+      background-size: 25%;
+      transform: scale(1, 1) translateY(-20%);
+    }
+    @include res-max-mobile-l {
+      background-size: 80px;
+      transform: translateY(-40%);
     }
 
     div {
@@ -155,6 +173,12 @@
         --text-transform-x: -69%;
         --text-index-y: var(--text-index-y-top);
         grid-area: 1 / 3 / 2 / 5;
+        @media only screen and (max-width: 767px){
+          --text-transform-x: -90%;
+        }
+        @include res-max-mobile-l {
+          --text-transform-x: -69%;
+        }
       }
       &:nth-of-type(2) {
         --text-left: 0%;
@@ -162,6 +186,12 @@
         --text-transform-x: 0%;
         --text-index-x: var(--text-index-x-right);
         grid-area: 2 / 4 / 3 / 5;
+        @media only screen and (max-width: 767px){
+          --text-transform-y: -64%;
+        }
+        @include res-max-mobile-l {
+          --text-transform-y: -75%;
+        }
       }
       &:nth-of-type(3) {
         --text-left: 0%;
@@ -169,6 +199,9 @@
         --text-transform-x: 0%;
         --text-index-x: var(--text-index-x-right);
         grid-area: 3 / 4 / 4 / 5;
+        @include res-max-mobile-l {
+          --text-transform-y: -5%;
+        }
       }
       &:nth-of-type(4) {
         --text-top: 0%;
@@ -176,6 +209,12 @@
         --text-transform-x: -60%;
         --text-index-y: var(--text-index-y-bottom);
         grid-area: 4 / 3 / 5 / 5;
+        @media only screen and (max-width: 767px){
+          --text-transform-x: -70%;
+        }
+        @include res-max-mobile-l {
+          --text-transform-x: -60%;
+        }
       }
       &:nth-of-type(5) {
         --text-top: 0%;
@@ -183,6 +222,12 @@
         --text-transform-x: -27%;
         --text-index-y: var(--text-index-y-bottom);
         grid-area: 4 / 1 / 5 / 3;
+        @media only screen and (max-width: 767px){
+          --text-transform-x: 3%;
+        }
+        @include res-max-mobile-l {
+          --text-transform-x: -27%;
+        }
       }
       &:nth-of-type(6) {
         --text-left: 100%;
@@ -190,6 +235,12 @@
         --text-transform-x: -100%;
         --text-index-x: var(--text-index-x-left);
         grid-area: 3 / 1 / 4 / 2;
+        @media only screen and (max-width: 767px){
+          --text-transform-y: -36%;
+        }
+        @include res-max-mobile-l {
+          --text-transform-y: -16%;
+        }
       }
       &:nth-of-type(7) {
         --text-left: 100%;
@@ -197,6 +248,12 @@
         --text-transform-x: -100%;
         --text-index-x: var(--text-index-x-left);
         grid-area: 2 / 1 / 3 / 2;
+        @media only screen and (max-width: 767px){
+          --text-transform-y: -64%;
+        }
+        @include res-max-mobile-l {
+          --text-transform-y: -82%;
+        }
       }
       &:nth-of-type(8) {
         --text-top: 100%;
@@ -204,6 +261,12 @@
         --text-transform-x: -40%;
         --text-index-y: var(--text-index-y-top);
         grid-area: 1 / 1 / 2 / 3;
+        @media only screen and (max-width: 767px){
+          --text-transform-x: -27%;
+        }
+        @include res-max-mobile-l {
+          --text-transform-x: -40%;
+        }
       }
       &:nth-of-type(9) {
         --anim-time: 4s;
@@ -212,22 +275,6 @@
         transform: scale(1, 1);
         z-index: 0;
         grid-area: 2 / 2 / 4 / 4;
-
-        &::before {
-          --anim-time: 1s;
-          display: block;
-          content: "";
-          width: 100px;
-          height: 100px;
-          background-image: url("../images/logos/logo.svg");
-          background-repeat: no-repeat;
-          background-position: center center;
-          background-size: cover;
-          opacity: 0;
-          animation: showOpacity var(--anim-time) forwards linear;
-          animation-delay: 4.5s;
-          @include center-item;
-        }
 
         &:after {
           @include center-item;
@@ -242,6 +289,12 @@
           );
           border-radius: 50%;
           animation: showGradually var(--anim-time) forwards linear;
+          @media only screen and (max-width: 767px){
+            width: 53%;
+          }
+          @include res-max-mobile-l {
+            width: 90px;
+          }
         }
         /* Desktop & Mobile Safari + Firefox */
         @supports (-webkit-touch-callout: none) or (selector: nth-child(1 of x)) or (-moz-appearance: none) {
@@ -260,6 +313,22 @@
         --text-index-x-left: -48px;
         font-size: $gap-l;
       }
+      @include res-max-tablet {
+        --text-index-y-top: 32px;
+        --text-index-y-bottom: -32px;
+      }
+      @media only screen and (max-width: 767px) {
+        --text-index-y-top: -32px;
+        --text-index-y-bottom: 32px;
+        --text-index-x-right: -32px;
+        --text-index-x-left: 32px;
+      }
+      @include res-max-mobile-l {
+        --text-index-y-top: -32px;
+        --text-index-y-bottom: 32px;
+        --text-index-x-right: -32px;
+        --text-index-x-left: 32px;
+      }
 
       > p {
         @include center-item(
@@ -276,6 +345,12 @@
         white-space: nowrap;
         @include res-max-desktop-s {
           font-size: $gap-l;
+        }
+        @media only screen and (max-width: 767px){
+          font-size: large;
+        }
+        @include res-max-mobile-l {
+          font-size: medium;
         }
       }
     }
