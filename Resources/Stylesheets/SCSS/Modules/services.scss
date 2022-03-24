@@ -95,11 +95,11 @@
     }
 
     .img-wrapper{ 
-      --radius:#{$gap-xl};
-      --color-box-shadow: #{$color-box-shadow};     
+      --radius:#{$gap-xl};      
+      --shadow-alpha:.17;    
       border-radius: var(--radius);
       overflow: hidden;
-      @include box-shadow(0, 0, 20px);
+      @include box-shadow(var(--shadow-alpha), 0, 0, 20px);
 
       > picture{
         display: flex;
