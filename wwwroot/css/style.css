@@ -872,7 +872,7 @@ small {
             margin-top: 0.4em; } }
   .header__bg {
     display: grid;
-    background-image: url("../images/backgrounds/circle.svg");
+    background-image: url("../images/backgrounds/header-bg.webp");
     background-repeat: no-repeat;
     background-position: center center;
     background-size: 65%;
