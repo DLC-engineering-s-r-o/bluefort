@@ -4,6 +4,7 @@ export function initEmail() {
     axios as any
 
     const fullNameEl = document.getElementById('fullName') as HTMLInputElement
+    const contactForm = document.getElementById('contactForm') as HTMLFormElement
     const phoneEl = document.getElementById('phone') as HTMLInputElement
     const mailEl = document.getElementById('email') as HTMLInputElement
     const messageEl = document.getElementById('msg') as HTMLTextAreaElement
@@ -36,13 +37,6 @@ export function initEmail() {
 
     function setEnabled(el){
         el.removeAttribute('disabled')
-    }
-
-    function clearForm(){
-        fullName = ''
-        email = ''
-        phone = ''
-        message = ''
     }
 
     function setEmailContent() {
@@ -96,7 +90,7 @@ export function initEmail() {
         if (fullName != '' && email != '' && message != '') {
             setDisabled(submitBtn)
             axiosPost()
-            clearForm()
+            contactForm.reset()
         }
 
         else console.log('%cPlease fill in the required fields!', 'color:red;')
